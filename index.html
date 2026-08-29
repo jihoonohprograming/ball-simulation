@@ -5,7 +5,7 @@
 <body><main><h1>칸막이 유체 모방 실험</h1><p>5,200개 유체 입자의 압력·점성·응집 흐름을 관찰해 보세요.</p><canvas id="world"></canvas><div class="controls"><input id="lift" type="hidden" value="0"><button id="openGate">칸막이 한 번에 빼기</button><button id="reset">실험 다시 시작</button></div></main>
 <script>
 const c=document.querySelector('#world'),ctx=c.getContext('2d'),lift=document.querySelector('#lift');
-const N=5200,R=2.5,H=12.5,GRAVITY=1050,REST=.18,VISC=.055;
+const N=5200,R=2.5,H=12.5,GRAVITY=1050,REST=.36,VISC=.055;
 let W,Ht,bottom,gateX,particles=[],last=performance.now(),acc=0;
 function resize(){const b=c.getBoundingClientRect(),s=devicePixelRatio||1;c.width=Math.round(b.width*s);c.height=Math.round(b.height*s);ctx.setTransform(s,0,0,s,0,0);W=b.width;Ht=b.height;bottom=Ht-42;gateX=W*.37;reset()}addEventListener('resize',resize);
 function reset(){particles=[];const spacing=R*1.82,cols=Math.floor((gateX-70)/spacing),rows=Math.ceil(N/cols);for(let n=0;n<N;n++){const col=n%cols,row=Math.floor(n/cols);const jitter=(Math.random()-.5)*R*.34;particles.push({x:58+col*spacing+jitter,y:bottom-R-row*spacing+(Math.random()-.5)*R*.34,vx:0,vy:0})}lift.value=0}
