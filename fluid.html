@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>물처럼 흐르는 공 1000개</title>
+<style>
+*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:radial-gradient(circle at 50% 0,#24355d,#070b16 70%);font-family:system-ui,sans-serif;color:#eef7ff}
+main{width:min(1000px,95vw);padding:20px 0}h1{text-align:center;margin:0;font-size:clamp(1.5rem,4vw,2.35rem)}p{text-align:center;color:#b9cbed;margin:8px 0 16px}
+canvas{width:100%;height:min(67vh,620px);display:block;border:2px solid #6fa2df;border-radius:18px;background:linear-gradient(#93d9ff,#d8f5ff 58%,#e9fbff);box-shadow:0 18px 55px #0008;touch-action:none}
+.controls{display:flex;justify-content:center;align-items:center;gap:12px;flex-wrap:wrap;margin-top:14px}button{border:0;border-radius:10px;background:#417ee2;color:#fff;padding:10px 16px;font-weight:700;font-size:1rem;cursor:pointer}button:hover{background:#5d95ed}label{display:flex;align-items:center;gap:8px;color:#dce9ff}input{accent-color:#7bb0ff}output{width:36px}
+</style></head>
+<body><main>
+<h1>물처럼 흐르는 공 1,000개</h1>
+<p>공들이 중력으로 떨어지고 서로 밀리며 바닥에 고입니다. 화면을 누르면 그곳에서 다시 쏟아져요.</p>
+<canvas id="world"></canvas>
+<div class="controls">
+<button id="reset">1,000개 다시 떨어뜨리기</button><button id="pause">일시 정지</button>
+<label>중력 <input id="gravity" type="range" min="300" max="2400" step="100" value="1500"><output id="gout">1500</output></label>
+<label>점성 <input id="viscosity" type="range" min="90" max="100" value="97"><output id="vout">97%</output></label>
+</div></main>
+<script>
+const c=document.querySelector('#world'),x=c.getContext('2d'),N=1000,R=4.2,D=R*2,CELL=D;
+const gravity=document.querySelector('#gravity'),viscosity=document.querySelector('#viscosity'),gout=document.querySelector('#gout'),vout=document.querySelector('#vout');
+let W,H,particles=[],paused=false,last=performance.now(),accumulator=0;
+function size(){const q=c.getBoundingClientRect(),s=devicePixelRatio||1;c.width=q.width*s;c.height=q.height*s;x.setTransform(s,0,0,s,0,0);W=q.width;H=q.height}
+addEventListener('resize',()=>{size();reset()});size();
+function reset(at){particles=[];const cols=Math.floor((W-36)/(D*.91));const startX=at?Math.max(20,Math.min(W-20,at.x)):W/2;const startY=at?Math.max(18,at.y):20;
+for(let i=0;i<N;i++){const row=Math.floor(i/cols),col=i%cols;const px=startX+(col-cols/2)*D*.88+(Math.random()-.5)*1.5;const py=startY+row*D*.88;particles.push({x:px,y:py,px:px+(Math.random()-.5)*2,py:py+(Math.random()-.5)*2})}}
+function solveWalls(p){const vx=p.x-p.px,vy=p.y-p.py;if(p.x<R){p.x=R;p.px=p.x+vx*.25}if(p.x>W-R){p.x=W-R;p.px=p.x+vx*.25}if(p.y<R){p.y=R;p.py=p.y+vy*.25}if(p.y>H-R){p.y=H-R;p.py=p.y+vy*.16}}
+function buildGrid(){const m=new Map;for(let i=0;i<N;i++){const p=particles[i],cx=Math.floor(p.x/CELL),cy=Math.floor(p.y/CELL),k=cx+','+cy;(m.get(k)||m.set(k,[]).get(k)).push(i)}return m}
+function collide(){const grid=buildGrid();for(let i=0;i<N;i++){const a=particles[i],cx=Math.floor(a.x/CELL),cy=Math.floor(a.y/CELL);for(let yy=cy-1;yy<=cy+1;yy++)for(let xx=cx-1;xx<=cx+1;xx++){const list=grid.get(xx+','+yy);if(!list)continue;for(const j of list){if(j<=i)continue;const b=particles[j],dx=b.x-a.x,dy=b.y-a.y,ds=dx*dx+dy*dy;if(ds>0&&ds<D*D){const d=Math.sqrt(ds),push=(D-d)*.5/d,ox=dx*push,oy=dy*push;a.x-=ox;a.y-=oy;b.x+=ox;b.y+=oy}}}}}
+function step(){const damp=+viscosity.value/100;for(const p of particles){const vx=(p.x-p.px)*damp,vy=(p.y-p.py)*damp;p.px=p.x;p.py=p.y;p.x+=vx;p.y+=vy;p.y+=(+gravity.value)/3600}
+for(let k=0;k<3;k++){collide();for(const p of particles)solveWalls(p)}}
+function draw(){x.clearRect(0,0,W,H);x.fillStyle='#68b95d';x.fillRect(0,H-8,W,8);const grad=x.createRadialGradient(W*.36,H*.1,10,W*.5,H*.55,Math.max(W,H));grad.addColorStop(0,'#5fcbff');grad.addColorStop(1,'#077cc4');x.fillStyle=grad;for(const p of particles){x.beginPath();x.arc(p.x,p.y,R,0,Math.PI*2);x.fill()}x.fillStyle='#ffffff45';x.font='14px system-ui';x.fillText('1,000 particles',16,25)}
+function loop(t){const dt=Math.min((t-last)/1000,.05);last=t;if(!paused){accumulator+=dt;while(accumulator>1/60){step();accumulator-=1/60}}gout.value=gravity.value;vout.value=viscosity.value+'%';draw();requestAnimationFrame(loop)}
+c.addEventListener('pointerdown',e=>{const q=c.getBoundingClientRect();reset({x:e.clientX-q.left,y:e.clientY-q.top})});
+document.querySelector('#reset').onclick=()=>reset();document.querySelector('#pause').onclick=e=>{paused=!paused;e.target.textContent=paused?'계속하기':'일시 정지'};reset();requestAnimationFrame(loop);
+</script></body></html>
