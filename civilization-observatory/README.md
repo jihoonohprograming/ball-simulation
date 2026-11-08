@@ -26,9 +26,11 @@ This is a fictional numeric model, not evidence that a design is physically viab
 There is no general intelligence, consciousness, natural-language generation,
 unbounded physics engine, or autonomous source-code generation.
 
-The observer can inspect and follow residents, pan, zoom, and show names.
-Simulation time advances at 1,000x. Elapsed offline time is replayed on return in
-small batches; simulation and neural state are saved to browser localStorage.
+The observer can inspect and follow residents, pan, zoom, show names, and select
+1,000x, 10,000x, or 100,000x time flow. The chosen rate is stored with the city
+and is also applied when elapsed time is replayed after returning to the page.
+Elapsed offline time is replayed in small batches; simulation and neural state
+are saved to browser localStorage.
 The old multi-city save is retained separately. No server executes while the page
 is closed. Clearing browser data removes the single-city save.
 
@@ -37,4 +39,5 @@ Run the model and integration tests:
     node tests/city-brain.test.cjs
     node tests/city-world.test.cjs
     node tests/city-society.test.cjs
+    node tests/city-speed.test.cjs
     node tests/integration.test.cjs
