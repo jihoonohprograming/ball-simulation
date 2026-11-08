@@ -56,4 +56,4 @@ function initDeviceViewer(){const style=document.createElement('style');style.te
 function renderCreationLists(){for(let kind of ['project','invention']){let container=$(kind==='project'?'projects':'inventions'),items=kind==='project'?S.projects.filter(q=>!q.done&&!q.abandoned):S.inventions;let key=items.map((q,i)=>kind==='project'?q.id:i).join(',');if(container.dataset.creationKey!==key){container.dataset.creationKey=key;container.replaceChildren(...items.map((q,i)=>{let b=document.createElement('button');b.className='deviceListing';b.onclick=()=>openDevice(kind,kind==='project'?q.id:i);return b}))}items.forEach((q,i)=>{container.children[i].textContent=q.name+' · '+(kind==='project'?'제작 '+Math.min(100,Math.floor(q.progress/q.required*100))+'%':'완성')+' · 자세히 보기'})}}
 initDeviceViewer();
 
-</script><script src="city-society.js"></script></html>
+</script><script src="city-society.js"></script><script src="city-speed.js"></script></html>
