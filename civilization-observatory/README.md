@@ -10,6 +10,15 @@ models estimate three-step need changes. A symbolic planner identifies resource
 prerequisites; personality and initial utility estimates bootstrap decisions.
 Urgent needs constrain exploration. Residents can share action models at the park.
 
+Each resident also carries a bounded social record: two values, an aspiration,
+a recurring question, up to twelve remembered relationships, recent conversations,
+and a short personal journal. Conversations spread named questions through the
+city; residents can form small groups, invite trusted people, open collective
+questions, and vote on temporary cooperation norms. Those norms make a small,
+measured difference to related work. New invention records retain the question
+that inspired their design, so an observer can trace a device back to the
+city's social history.
+
 Invention search recombines and mutates variable component graphs, including
 speculative time/space primitives. Designs require resources and labor; failed
 trials revise or abandon designs. Successful measured effects change the economy.
@@ -23,6 +32,9 @@ small batches; simulation and neural state are saved to browser localStorage.
 The old multi-city save is retained separately. No server executes while the page
 is closed. Clearing browser data removes the single-city save.
 
-Run the learning and invention tests:
+Run the model and integration tests:
 
     node tests/city-brain.test.cjs
+    node tests/city-world.test.cjs
+    node tests/city-society.test.cjs
+    node tests/integration.test.cjs
