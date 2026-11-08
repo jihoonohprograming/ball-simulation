@@ -6,6 +6,7 @@ for(const f of ['city-brain.js','city-world.js'])vm.runInContext(fs.readFileSync
 const source=fs.readFileSync('dist/index.html','utf8').split('<script>')[1].split('</script>')[0];
 vm.runInContext(source,ctx);
 vm.runInContext(fs.readFileSync('dist/city-society.js','utf8'),ctx);
+vm.runInContext(fs.readFileSync('dist/city-speed.js','utf8'),ctx);
 vm.runInContext(`
   for(let i=0;i<144*14;i++)simulate();
   if(!S.inventions.length)throw Error('no invention');
@@ -15,6 +16,7 @@ vm.runInContext(`
   if(!S.society?.dialogues?.length)throw Error('no resident dialogue');
   if(!S.society?.chronicle?.length)throw Error('no city chronicle');
   if(!S.inventions.some(q=>q.socialLineage))throw Error('invention has no social provenance');
+  if(S.speed!==1000)throw Error('speed default');
   if(S.people.some(p=>![p.x,p.y,p.health,p.age].every(Number.isFinite)))throw Error('invalid resident');
   if(![S.food,S.energy,S.materials,S.ore].every(v=>Number.isFinite(v)&&v>=0))throw Error('resources');
   if(S.people.some(p=>!p.brain.updates))throw Error('learning');
