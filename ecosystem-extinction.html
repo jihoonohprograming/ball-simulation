@@ -1,0 +1,1039 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>생태계 붕괴 관찰소</title>
+  <style>
+    :root {
+      --ink: #eaf6ed;
+      --muted: #9fb7a8;
+      --panel: rgba(13, 28, 25, .78);
+      --panel-strong: #10221f;
+      --line: rgba(188, 240, 197, .16);
+      --green: #82da85;
+      --mint: #65d9ba;
+      --gold: #f6c36b;
+      --orange: #ec8e55;
+      --red: #ef635e;
+      --shadow: 0 22px 60px rgba(0, 0, 0, .34);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      font-family: Pretendard, "Noto Sans KR", system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 12% 5%, rgba(76, 145, 112, .24), transparent 30rem),
+        radial-gradient(circle at 90% 95%, rgba(220, 113, 63, .16), transparent 34rem),
+        #071411;
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .shell {
+      width: min(1500px, calc(100% - 28px));
+      margin: 0 auto;
+      padding: 22px 0 42px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      margin: 4px 0 20px;
+    }
+
+    .brand { display: flex; align-items: center; gap: 14px; }
+    .brand-mark {
+      display: grid;
+      place-items: center;
+      width: 48px;
+      height: 48px;
+      border: 1px solid rgba(136, 237, 155, .38);
+      border-radius: 15px;
+      color: #b8ffbf;
+      font-size: 26px;
+      background: rgba(77, 165, 94, .12);
+      box-shadow: inset 0 0 24px rgba(90, 230, 111, .09);
+    }
+    h1 { margin: 0; font-size: clamp(20px, 2.6vw, 30px); letter-spacing: -.06em; }
+    .subtitle { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+    .live {
+      display: flex; align-items: center; gap: 8px;
+      border: 1px solid rgba(110, 228, 137, .3);
+      border-radius: 999px; padding: 8px 11px; color: #aaf5b2;
+      background: rgba(79, 160, 89, .1); font-size: 12px; font-weight: 800;
+      letter-spacing: .06em;
+    }
+    .live::before {
+      content: ""; width: 8px; height: 8px; border-radius: 50%; background: #73e780;
+      box-shadow: 0 0 0 4px rgba(115, 231, 128, .12);
+      animation: pulse 1.8s infinite;
+    }
+
+    .top-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 330px;
+      gap: 16px;
+    }
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      backdrop-filter: blur(12px);
+    }
+    .world-panel { min-height: 560px; position: relative; }
+    .world-toolbar {
+      position: absolute; z-index: 2; top: 14px; left: 14px; right: 14px;
+      display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+      pointer-events: none;
+    }
+    .world-toolbar > * { pointer-events: auto; }
+    .map-card {
+      padding: 9px 12px; border: 1px solid rgba(226,255,228,.12);
+      border-radius: 12px; background: rgba(5, 15, 12, .66); font-size: 12px;
+      color: #d8e9da; backdrop-filter: blur(6px);
+    }
+    .map-card strong { display: block; font-size: 14px; color: white; margin-bottom: 2px; }
+    .world-legend { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+    .legend-chip {
+      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+      padding: 7px 9px; border-radius: 999px; border: 1px solid rgba(226,255,228,.12);
+      color: #daebdd; background: rgba(5,15,12,.66); font-size: 11px;
+    }
+    .legend-chip i { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+    #world { display: block; width: 100%; height: 100%; min-height: 560px; touch-action: none; }
+    .canvas-note {
+      position: absolute; z-index: 2; bottom: 14px; left: 14px;
+      padding: 8px 10px; border-radius: 10px; pointer-events: none;
+      background: rgba(5,15,12,.62); color: #c1d1c4; font-size: 11px;
+    }
+
+    .controls { padding: 16px; display: flex; flex-direction: column; gap: 13px; }
+    .section-title {
+      margin: 0 0 9px; color: #d9ecdc; font-weight: 800; font-size: 13px; letter-spacing: -.02em;
+    }
+    .control-block { padding: 14px; border-radius: 15px; border: 1px solid var(--line); background: rgba(2, 12, 9, .28); }
+    .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .button-row.one { grid-template-columns: 1fr; }
+    .button {
+      border: 1px solid rgba(202, 243, 211, .18); border-radius: 11px; padding: 10px 9px;
+      color: #effff0; background: #1c3a30; font-size: 12px; font-weight: 800;
+      transition: transform .14s, filter .14s, background .14s;
+    }
+    .button:hover { filter: brightness(1.16); transform: translateY(-1px); }
+    .button:active { transform: translateY(0); }
+    .button.secondary { background: rgba(51, 82, 69, .58); color: #d6ead9; }
+    .button.danger { background: linear-gradient(135deg, #a7443f, #cf5d48); border-color: rgba(255, 190, 149, .35); }
+    .button.volcano { background: linear-gradient(135deg, #8b4b35, #bf7843); border-color: rgba(255, 205, 143, .35); }
+    .button.target { background: rgba(37, 97, 84, .75); }
+    .button.target.active { color: #092314; background: #b1f7c2; }
+
+    .metric-line { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 5px; color: #b9cfbf; font-size: 12px; }
+    .metric-line output { color: #fff; font-weight: 850; font-size: 14px; }
+    input[type="range"] { width: 100%; accent-color: #86db8c; cursor: ew-resize; }
+    .event-copy { margin: 9px 0 0; color: #9cb4a2; font-size: 11px; line-height: 1.55; }
+    .small-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; }
+    .small-stat { padding: 8px 7px; border-radius: 10px; background: rgba(110, 173, 124, .09); text-align: center; }
+    .small-stat span { display: block; color: #9bb3a1; font-size: 10px; }
+    .small-stat b { display: block; margin-top: 3px; color: #f2fff3; font-size: 13px; }
+    .notice {
+      padding: 11px 12px; border-left: 3px solid var(--mint); border-radius: 8px;
+      color: #c2d7c7; background: rgba(65, 192, 155, .08); font-size: 11px; line-height: 1.55;
+    }
+
+    .population-grid {
+      display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 16px;
+    }
+    .population-card { min-height: 112px; padding: 15px; position: relative; overflow: hidden; }
+    .population-card::after {
+      content: ""; position: absolute; right: -20px; bottom: -34px; width: 90px; height: 90px;
+      border: 1px solid currentColor; opacity: .16; border-radius: 50%;
+    }
+    .pop-name { color: #b4c9b9; font-size: 12px; }
+    .pop-value { margin: 7px 0 1px; color: white; font-weight: 900; letter-spacing: -.06em; font-size: clamp(24px, 3vw, 35px); }
+    .pop-detail { color: #9fb7a6; font-size: 11px; }
+    .population-card[data-type="plant"] { color: var(--green); }
+    .population-card[data-type="grazer"] { color: var(--gold); }
+    .population-card[data-type="meso"] { color: var(--orange); }
+    .population-card[data-type="apex"] { color: var(--red); }
+
+    .bottom-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr); gap: 16px; margin-top: 16px; }
+    .panel-title { padding: 16px 17px 0; margin: 0; font-size: 15px; letter-spacing: -.04em; }
+    .panel-description { margin: 5px 17px 13px; color: var(--muted); font-size: 11px; }
+    .table-wrap { overflow-x: auto; padding: 0 10px 12px; }
+    table { width: 100%; min-width: 520px; border-collapse: collapse; }
+    th, td { padding: 11px 8px; text-align: left; border-bottom: 1px solid rgba(211,255,219,.09); font-size: 12px; }
+    th { color: #91a89a; font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+    td { color: #e0efe2; }
+    .organism { display: flex; align-items: center; gap: 8px; font-weight: 800; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 auto; }
+    .survival-cell { min-width: 140px; }
+    .survival-label { display: flex; gap: 7px; align-items: center; font-weight: 850; }
+    .bar { height: 6px; width: 100%; max-width: 110px; margin-top: 5px; border-radius: 99px; background: #20362d; overflow: hidden; }
+    .bar > span { display: block; height: 100%; border-radius: inherit; }
+    .status { font-size: 10px; font-weight: 800; }
+    .status.safe { color: #a9e8ad; }
+    .status.critical { color: #ffd170; }
+    .status.extinct { color: #ff8d86; }
+
+    .chart-area { padding: 5px 13px 14px; }
+    #historyChart { width: 100%; height: 210px; display: block; }
+    .chart-key { padding: 0 17px 13px; display: flex; flex-wrap: wrap; gap: 9px; color: #b8ccbc; font-size: 10px; }
+    .chart-key span { display: inline-flex; align-items: center; gap: 5px; }
+    .chart-key i { width: 8px; height: 3px; border-radius: 2px; }
+    .event-log { padding: 0 15px 14px; max-height: 164px; overflow: auto; }
+    .log-row { display: grid; grid-template-columns: 52px 1fr; gap: 9px; padding: 8px 0; border-bottom: 1px solid rgba(211,255,219,.08); font-size: 11px; line-height: 1.45; }
+    .log-row time { color: #91af99; }
+    .log-row b { color: #f2fff3; }
+    .empty-log { color: #90a897; font-size: 12px; padding: 14px 0; }
+    .footer-note { margin: 16px 2px 0; color: #77907f; font-size: 11px; line-height: 1.6; }
+
+    @keyframes pulse { 50% { box-shadow: 0 0 0 8px rgba(115, 231, 128, 0); } }
+    @media (max-width: 980px) {
+      .top-grid { grid-template-columns: 1fr; }
+      .controls { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); align-items: start; }
+      .controls .notice { grid-column: span 2; }
+      .world-panel, #world { min-height: 490px; }
+    }
+    @media (max-width: 720px) {
+      .shell { width: min(100% - 18px, 1500px); padding-top: 12px; }
+      header { align-items: flex-start; }
+      .live { display: none; }
+      .world-toolbar { flex-direction: column; }
+      .world-legend { justify-content: flex-start; }
+      .population-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .bottom-grid { grid-template-columns: 1fr; }
+      .controls { grid-template-columns: 1fr; }
+      .controls .notice { grid-column: auto; }
+      .world-panel, #world { min-height: 430px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">◒</div>
+        <div>
+          <h1>생태계 붕괴 관찰소</h1>
+          <p class="subtitle">먹이사슬과 재난이 생존에 미치는 영향을 관찰하는 실험형 시뮬레이션</p>
+        </div>
+      </div>
+      <div class="live">SIMULATION LIVE</div>
+    </header>
+
+    <section class="top-grid">
+      <article class="panel world-panel">
+        <div class="world-toolbar">
+          <div class="map-card">
+            <strong id="seasonLabel">초원 생태계 · 안정</strong>
+            <span id="eventLabel">재난 없음</span>
+          </div>
+          <div class="world-legend" aria-label="생물 범례">
+            <span class="legend-chip"><i style="background:#82da85"></i>생산자</span>
+            <span class="legend-chip"><i style="background:#f6c36b"></i>초식동물</span>
+            <span class="legend-chip"><i style="background:#ec8e55"></i>중간 포식자</span>
+            <span class="legend-chip"><i style="background:#ef635e"></i>최상위 포식자</span>
+          </div>
+        </div>
+        <canvas id="world" aria-label="생태계 시뮬레이션 지도"></canvas>
+        <div class="canvas-note">지도를 클릭하면 재난 위치를 고정할 수 있습니다.</div>
+      </article>
+
+      <aside class="panel controls">
+        <section class="control-block">
+          <h2 class="section-title">시간 제어</h2>
+          <div class="button-row">
+            <button class="button" id="playButton">❚❚ 일시정지</button>
+            <button class="button secondary" id="resetButton">↻ 새 생태계</button>
+          </div>
+          <div style="margin-top:12px">
+            <div class="metric-line"><span>시간 배속</span><output id="speedOutput">1.0×</output></div>
+            <input id="speed" type="range" min="0.25" max="20" value="1" step="0.25" aria-label="시간 배속">
+          </div>
+        </section>
+
+        <section class="control-block">
+          <h2 class="section-title">운석 충돌</h2>
+          <div class="metric-line"><span>운석 지름</span><output id="meteorOutput">120 m</output></div>
+          <input id="meteorSize" type="range" min="10" max="1200" value="120" step="10" aria-label="운석 지름">
+          <p class="event-copy">지름이 클수록 충돌 반경, 열, 먼지가 커집니다. 생존 개체도 이후 먹이 부족으로 감소할 수 있습니다.</p>
+          <div class="button-row one" style="margin-top:10px">
+            <button class="button danger" id="meteorButton">☄ 운석 충돌시키기</button>
+          </div>
+        </section>
+
+        <section class="control-block">
+          <h2 class="section-title">화산 폭발</h2>
+          <div class="metric-line"><span>분화 강도</span><output id="volcanoOutput">6 / 10</output></div>
+          <input id="volcanoPower" type="range" min="1" max="10" value="6" step="1" aria-label="화산 분화 강도">
+          <p class="event-copy">분화구 주변의 직접 피해와 화산재로 인한 일조량 감소가 함께 적용됩니다.</p>
+          <div class="button-row one" style="margin-top:10px">
+            <button class="button volcano" id="volcanoButton">♨ 화산 폭발시키기</button>
+          </div>
+        </section>
+
+        <section class="control-block">
+          <h2 class="section-title">충돌 지점</h2>
+          <div class="button-row">
+            <button class="button target" id="targetButton">⌖ 지도에서 선택</button>
+            <button class="button secondary" id="randomTargetButton">↺ 무작위로</button>
+          </div>
+          <p class="event-copy" id="targetCopy">현재 재난은 무작위 위치에서 발생합니다.</p>
+        </section>
+
+        <section class="control-block">
+          <h2 class="section-title">현재 환경</h2>
+          <div class="small-stats">
+            <div class="small-stat"><span>경과 일수</span><b id="dayStat">0일</b></div>
+            <div class="small-stat"><span>일조량</span><b id="sunStat">100%</b></div>
+            <div class="small-stat"><span>화산재</span><b id="ashStat">0%</b></div>
+          </div>
+        </section>
+
+        <div class="notice">생존율은 <b>마지막 재난이 일어난 직전의 개체 수</b>와 현재 개체 수를 비교합니다. 0마리가 되면 그 생물군은 이 초원에서 멸종됩니다.</div>
+      </aside>
+    </section>
+
+    <section class="population-grid" aria-label="현재 개체 수">
+      <article class="panel population-card" data-type="plant">
+        <div class="pop-name">생산자 · 풀과 관목</div><div class="pop-value" id="count-plant">0</div><div class="pop-detail" id="detail-plant">기준 0</div>
+      </article>
+      <article class="panel population-card" data-type="grazer">
+        <div class="pop-name">1차 소비자 · 초식동물</div><div class="pop-value" id="count-grazer">0</div><div class="pop-detail" id="detail-grazer">기준 0</div>
+      </article>
+      <article class="panel population-card" data-type="meso">
+        <div class="pop-name">2차 소비자 · 중간 포식자</div><div class="pop-value" id="count-meso">0</div><div class="pop-detail" id="detail-meso">기준 0</div>
+      </article>
+      <article class="panel population-card" data-type="apex">
+        <div class="pop-name">3차 소비자 · 최상위 포식자</div><div class="pop-value" id="count-apex">0</div><div class="pop-detail" id="detail-apex">기준 0</div>
+      </article>
+    </section>
+
+    <section class="bottom-grid">
+      <article class="panel">
+        <h2 class="panel-title">재난 뒤 생존 현황</h2>
+        <p class="panel-description" id="survivalCaption">아직 재난이 일어나지 않았습니다. 현재 개체 수는 초기 생태계를 기준으로 표시됩니다.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>생물군</th><th>재난 직전</th><th>현재</th><th>생존율</th><th>상태</th></tr></thead>
+            <tbody id="survivalBody"></tbody>
+          </table>
+        </div>
+      </article>
+
+      <article class="panel">
+        <h2 class="panel-title">개체 수 변화</h2>
+        <p class="panel-description">초기 개체 수를 100%로 한 상대 변화입니다.</p>
+        <div class="chart-area"><canvas id="historyChart" aria-label="개체 수 변화 그래프"></canvas></div>
+        <div class="chart-key">
+          <span><i style="background:#82da85"></i>생산자</span>
+          <span><i style="background:#f6c36b"></i>초식동물</span>
+          <span><i style="background:#ec8e55"></i>중간 포식자</span>
+          <span><i style="background:#ef635e"></i>최상위 포식자</span>
+        </div>
+      </article>
+    </section>
+
+    <section class="panel" style="margin-top:16px">
+      <h2 class="panel-title">관찰 기록</h2>
+      <p class="panel-description">재난과 멸종 위험 상태가 이곳에 기록됩니다.</p>
+      <div class="event-log" id="eventLog"></div>
+    </section>
+
+    <p class="footer-note">이 프로그램은 먹이, 번식, 노화, 재난 피해와 환경 회복을 단순화한 교육용 모델입니다. 실제 생태계의 정확한 예측 도구는 아닙니다.</p>
+  </main>
+
+  <script>
+  (function () {
+    "use strict";
+
+    var world = document.getElementById("world");
+    var ctx = world.getContext("2d");
+    var chart = document.getElementById("historyChart");
+    var chartCtx = chart.getContext("2d");
+    var DPR = Math.min(window.devicePixelRatio || 1, 2);
+    var W = 960;
+    var H = 600;
+
+    var defs = {
+      plant: { name: "생산자 · 풀과 관목", short: "생산자", color: "#82da85", initial: 560, max: 780, size: 3.2, role: "producer" },
+      grazer: { name: "1차 소비자 · 초식동물", short: "초식동물", color: "#f6c36b", initial: 58, max: 120, size: 6.6, role: "grazer" },
+      meso: { name: "2차 소비자 · 중간 포식자", short: "중간 포식자", color: "#ec8e55", initial: 20, max: 48, size: 8.4, role: "meso" },
+      apex: { name: "3차 소비자 · 최상위 포식자", short: "최상위 포식자", color: "#ef635e", initial: 7, max: 16, size: 10.5, role: "apex" }
+    };
+    var typeOrder = ["plant", "grazer", "meso", "apex"];
+    var animals = { plant: [], grazer: [], meso: [], apex: [] };
+    var initialCounts = {};
+    var survivalBaseline = {};
+    var lastDisaster = null;
+    var history = [];
+    var effects = [];
+    var logs = [];
+    var running = true;
+    var speed = 1;
+    var simDay = 0;
+    var lastFrame = performance.now();
+    var lastUi = 0;
+    var lastHistoryDay = -99;
+    var plantSpawnDebt = 0;
+    var target = null;
+    var selectTarget = false;
+    var conditions = { ash: 0, heat: 0, drought: 0 };
+
+    function rand(min, max) { return min + Math.random() * (max - min); }
+    function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+    function chance(probability) { return Math.random() < probability; }
+    function distanceSq(a, b) { var dx = a.x - b.x; var dy = a.y - b.y; return dx * dx + dy * dy; }
+    function formatCount(n) { return Math.max(0, Math.round(n)).toLocaleString("ko-KR"); }
+    function countAll() {
+      var result = {};
+      typeOrder.forEach(function (type) { result[type] = animals[type].length; });
+      return result;
+    }
+    function ageText() { return Math.floor(simDay).toLocaleString("ko-KR") + "일"; }
+    function toPercent(current, baseline) { return baseline ? clamp(current / baseline * 100, 0, 999) : (current ? 100 : 0); }
+    function rgba(hex, alpha) {
+      var n = hex.replace("#", "");
+      var r = parseInt(n.substring(0,2),16);
+      var g = parseInt(n.substring(2,4),16);
+      var b = parseInt(n.substring(4,6),16);
+      return "rgba(" + r + "," + g + "," + b + "," + alpha + ")";
+    }
+
+    function createPlant(x, y) {
+      return { x: x == null ? rand(15, W - 15) : x, y: y == null ? rand(30, H - 18) : y, age: rand(0, 25), seed: Math.random() * 10, alive: true };
+    }
+    function createAnimal(type, x, y, inheritedEnergy) {
+      var d = defs[type];
+      return {
+        type: type,
+        x: x == null ? rand(20, W - 20) : x,
+        y: y == null ? rand(25, H - 25) : y,
+        vx: rand(-1, 1),
+        vy: rand(-1, 1),
+        energy: inheritedEnergy == null ? rand(37, 58) : inheritedEnergy,
+        age: rand(0, 18),
+        maxAge: type === "grazer" ? rand(95, 145) : type === "meso" ? rand(120, 170) : rand(150, 205),
+        cooldown: rand(0, 1.5),
+        target: null,
+        alive: true,
+        seed: Math.random() * 10
+      };
+    }
+
+    function reset() {
+      animals = { plant: [], grazer: [], meso: [], apex: [] };
+      typeOrder.forEach(function (type) {
+        for (var i = 0; i < defs[type].initial; i++) {
+          animals[type].push(type === "plant" ? createPlant() : createAnimal(type));
+        }
+      });
+      initialCounts = countAll();
+      survivalBaseline = Object.assign({}, initialCounts);
+      history = [];
+      effects = [];
+      logs = [];
+      conditions = { ash: 0, heat: 0, drought: 0 };
+      simDay = 0;
+      lastHistoryDay = -99;
+      plantSpawnDebt = 0;
+      lastDisaster = null;
+      addLog("새 생태계를 시작했습니다", "생산자부터 최상위 포식자까지 먹이사슬이 다시 형성됩니다.", "start");
+      recordHistory();
+      updateUi(true);
+    }
+
+    function addLog(title, text, kind) {
+      logs.unshift({ day: Math.floor(simDay), title: title, text: text, kind: kind || "event" });
+      if (logs.length > 18) logs.length = 18;
+      renderLog();
+    }
+
+    function renderLog() {
+      var container = document.getElementById("eventLog");
+      if (!logs.length) {
+        container.innerHTML = '<div class="empty-log">아직 기록이 없습니다.</div>';
+        return;
+      }
+      container.innerHTML = logs.map(function (item) {
+        return '<div class="log-row"><time>' + item.day.toLocaleString("ko-KR") + '일째</time><div><b>' + item.title + '</b><br>' + item.text + '</div></div>';
+      }).join("");
+    }
+
+    function findNearest(source, candidates, rangeSq) {
+      var best = null;
+      var bestDistance = rangeSq;
+      for (var i = 0; i < candidates.length; i++) {
+        var targetCandidate = candidates[i];
+        var d = distanceSq(source, targetCandidate);
+        if (d < bestDistance) { best = targetCandidate; bestDistance = d; }
+      }
+      return best;
+    }
+
+    function steerTowards(animal, destination, acceleration) {
+      var dx = destination.x - animal.x;
+      var dy = destination.y - animal.y;
+      var length = Math.hypot(dx, dy) || 1;
+      animal.vx += dx / length * acceleration;
+      animal.vy += dy / length * acceleration;
+    }
+
+    function wander(animal, strength) {
+      animal.vx += rand(-strength, strength);
+      animal.vy += rand(-strength, strength);
+    }
+
+    function moveAnimal(animal, dt, maxSpeed) {
+      var speedNow = Math.hypot(animal.vx, animal.vy);
+      if (speedNow > maxSpeed) {
+        animal.vx = animal.vx / speedNow * maxSpeed;
+        animal.vy = animal.vy / speedNow * maxSpeed;
+      }
+      animal.x += animal.vx * dt * 12;
+      animal.y += animal.vy * dt * 12;
+      animal.vx *= Math.pow(.83, dt);
+      animal.vy *= Math.pow(.83, dt);
+      if (animal.x < 10) { animal.x = 10; animal.vx = Math.abs(animal.vx); }
+      if (animal.x > W - 10) { animal.x = W - 10; animal.vx = -Math.abs(animal.vx); }
+      if (animal.y < 15) { animal.y = 15; animal.vy = Math.abs(animal.vy); }
+      if (animal.y > H - 14) { animal.y = H - 14; animal.vy = -Math.abs(animal.vy); }
+    }
+
+    function removeDead(type) {
+      animals[type] = animals[type].filter(function (item) { return item.alive; });
+    }
+
+    function spawnPlantBurst(x, y, amount) {
+      for (var i = 0; i < amount && animals.plant.length < defs.plant.max; i++) {
+        animals.plant.push(createPlant(clamp(x + rand(-45, 45), 10, W - 10), clamp(y + rand(-35, 35), 12, H - 12)));
+      }
+    }
+
+    function updatePlants(dt) {
+      var light = getLight();
+      var fertility = light * (1 - conditions.drought * .65);
+      if (animals.plant.length > 0) {
+        plantSpawnDebt += dt * (11 + animals.plant.length * .032) * fertility;
+        while (plantSpawnDebt >= 1 && animals.plant.length < defs.plant.max) {
+          animals.plant.push(createPlant());
+          plantSpawnDebt -= 1;
+        }
+      }
+      for (var i = 0; i < animals.plant.length; i++) animals.plant[i].age += dt;
+    }
+
+    function updateGrazers(dt) {
+      var herd = animals.grazer;
+      for (var i = 0; i < herd.length; i++) {
+        var animal = herd[i];
+        animal.age += dt;
+        animal.cooldown -= dt;
+        animal.energy -= dt * (0.72 + conditions.heat * .35);
+        var nearbyPlant = findNearest(animal, animals.plant, 92 * 92);
+        if (nearbyPlant) {
+          steerTowards(animal, nearbyPlant, .09);
+          if (distanceSq(animal, nearbyPlant) < 11 * 11 && animal.cooldown <= 0) {
+            nearbyPlant.alive = false;
+            animal.energy += 10.5;
+            animal.cooldown = .72;
+          }
+        } else {
+          wander(animal, .04);
+        }
+        moveAnimal(animal, dt, 2.15);
+        if (animal.energy > 73 && animal.age > 19 && herd.length < defs.grazer.max && chance(dt * .030)) {
+          animal.energy -= 25;
+          herd.push(createAnimal("grazer", animal.x + rand(-10, 10), animal.y + rand(-10, 10), 34));
+        }
+        if (animal.energy <= 0 || animal.age > animal.maxAge) animal.alive = false;
+      }
+      removeDead("plant");
+      removeDead("grazer");
+    }
+
+    function updateMesos(dt) {
+      var pack = animals.meso;
+      for (var i = 0; i < pack.length; i++) {
+        var animal = pack[i];
+        animal.age += dt;
+        animal.cooldown -= dt;
+        animal.energy -= dt * (.54 + conditions.heat * .3);
+        var prey = findNearest(animal, animals.grazer, 112 * 112);
+        if (prey) {
+          steerTowards(animal, prey, .105);
+          if (distanceSq(animal, prey) < 12 * 12 && animal.cooldown <= 0) {
+            prey.alive = false;
+            animal.energy += 29;
+            animal.cooldown = 2.6;
+          }
+        } else {
+          wander(animal, .035);
+        }
+        moveAnimal(animal, dt, 2.65);
+        if (animal.energy > 81 && animal.age > 29 && pack.length < defs.meso.max && chance(dt * .011)) {
+          animal.energy -= 30;
+          pack.push(createAnimal("meso", animal.x + rand(-10, 10), animal.y + rand(-10, 10), 37));
+        }
+        if (animal.energy <= 0 || animal.age > animal.maxAge) animal.alive = false;
+      }
+      removeDead("grazer");
+      removeDead("meso");
+    }
+
+    function updateApex(dt) {
+      var pack = animals.apex;
+      for (var i = 0; i < pack.length; i++) {
+        var animal = pack[i];
+        animal.age += dt;
+        animal.cooldown -= dt;
+        animal.energy -= dt * (.38 + conditions.heat * .24);
+        var prey = findNearest(animal, animals.meso, 135 * 135);
+        if (!prey && animals.grazer.length) prey = findNearest(animal, animals.grazer, 115 * 115);
+        if (prey) {
+          steerTowards(animal, prey, .115);
+          if (distanceSq(animal, prey) < 14 * 14 && animal.cooldown <= 0) {
+            prey.alive = false;
+            animal.energy += prey.type === "meso" ? 42 : 21;
+            animal.cooldown = prey.type === "meso" ? 4.2 : 2.9;
+          }
+        } else {
+          wander(animal, .026);
+        }
+        moveAnimal(animal, dt, 2.95);
+        if (animal.energy > 88 && animal.age > 40 && pack.length < defs.apex.max && chance(dt * .0055)) {
+          animal.energy -= 36;
+          pack.push(createAnimal("apex", animal.x + rand(-10, 10), animal.y + rand(-10, 10), 39));
+        }
+        if (animal.energy <= 0 || animal.age > animal.maxAge) animal.alive = false;
+      }
+      removeDead("grazer");
+      removeDead("meso");
+      removeDead("apex");
+    }
+
+    function getLight() { return clamp(1 - conditions.ash * .82, .10, 1); }
+    function updateConditions(dt) {
+      conditions.ash = Math.max(0, conditions.ash - dt * .0022);
+      conditions.heat = Math.max(0, conditions.heat - dt * .003);
+      conditions.drought = Math.max(0, conditions.drought - dt * .0012);
+    }
+
+    function updateEffects(dt) {
+      for (var i = effects.length - 1; i >= 0; i--) {
+        effects[i].age += dt;
+        if (effects[i].age > effects[i].life) effects.splice(i, 1);
+      }
+    }
+
+    function update(dt) {
+      updateConditions(dt);
+      updatePlants(dt);
+      updateGrazers(dt);
+      updateMesos(dt);
+      updateApex(dt);
+      updateEffects(dt);
+      simDay += dt;
+      if (simDay - lastHistoryDay >= 1) recordHistory();
+      checkThresholds();
+    }
+
+    function checkThresholds() {
+      typeOrder.forEach(function (type) {
+        var current = animals[type].length;
+        if (current === 0 && survivalBaseline[type] > 0 && !survivalBaseline[type + "_logged"]) {
+          survivalBaseline[type + "_logged"] = true;
+          addLog(defs[type].short + " 지역 멸종", "이 생물군은 0마리가 되어 이 초원에서 더 이상 회복할 수 없습니다.", "extinct");
+        }
+      });
+    }
+
+    function recordHistory() {
+      history.push({ day: simDay, counts: countAll() });
+      if (history.length > 150) history.shift();
+      lastHistoryDay = simDay;
+    }
+
+    function pickEventLocation() {
+      return target ? { x: target.x, y: target.y } : { x: rand(W * .18, W * .82), y: rand(H * .18, H * .82) };
+    }
+
+    function damageAt(location, radius, type, baseDamage, globalDamage) {
+      var list = animals[type];
+      var survivors = [];
+      var removed = 0;
+      for (var i = 0; i < list.length; i++) {
+        var item = list[i];
+        var d = Math.sqrt((item.x - location.x) * (item.x - location.x) + (item.y - location.y) * (item.y - location.y));
+        var local = d < radius ? Math.pow(1 - d / radius, 1.3) : 0;
+        var p = clamp(globalDamage + local * baseDamage, 0, .995);
+        if (chance(p)) {
+          removed++;
+        } else {
+          if (item.energy != null) item.energy *= (1 - p * .42);
+          survivors.push(item);
+        }
+      }
+      animals[type] = survivors;
+      return removed;
+    }
+
+    function causeMeteor() {
+      var size = Number(document.getElementById("meteorSize").value);
+      var intensity = clamp((Math.log(size) - Math.log(10)) / (Math.log(1200) - Math.log(10)), 0, 1);
+      var location = pickEventLocation();
+      var radius = 54 + intensity * 405;
+      var before = countAll();
+      setSurvivalBaseline(before, "지름 " + size.toLocaleString("ko-KR") + "m 운석 충돌");
+      var losses = {};
+      losses.plant = damageAt(location, radius, "plant", .99, intensity * .39);
+      losses.grazer = damageAt(location, radius, "grazer", .94, intensity * .29);
+      losses.meso = damageAt(location, radius, "meso", .88, intensity * .24);
+      losses.apex = damageAt(location, radius, "apex", .82, intensity * .18);
+      conditions.ash = Math.max(conditions.ash, intensity * .98);
+      conditions.heat = Math.max(conditions.heat, intensity * .72);
+      effects.push({ type: "meteor", x: location.x, y: location.y, radius: radius, age: 0, life: 3.5 + intensity * 3, intensity: intensity });
+      addLog("운석 충돌 · " + size.toLocaleString("ko-KR") + "m", "충돌 반경 " + Math.round(radius) + "m(모형 지도 기준). 즉시 감소: 생산자 " + losses.plant + " · 초식 " + losses.grazer + " · 중간 포식 " + losses.meso + " · 최상위 포식 " + losses.apex, "meteor");
+      updateUi(true);
+    }
+
+    function causeVolcano() {
+      var power = Number(document.getElementById("volcanoPower").value);
+      var intensity = power / 10;
+      var location = pickEventLocation();
+      var radius = 46 + power * 26;
+      var before = countAll();
+      setSurvivalBaseline(before, "강도 " + power + " 화산 폭발");
+      var losses = {};
+      losses.plant = damageAt(location, radius, "plant", .94, intensity * .10);
+      losses.grazer = damageAt(location, radius, "grazer", .86, intensity * .08);
+      losses.meso = damageAt(location, radius, "meso", .76, intensity * .06);
+      losses.apex = damageAt(location, radius, "apex", .66, intensity * .05);
+      conditions.ash = Math.max(conditions.ash, intensity * .91);
+      conditions.heat = Math.max(conditions.heat, intensity * .53);
+      effects.push({ type: "volcano", x: location.x, y: location.y, radius: radius, age: 0, life: 6 + intensity * 4, intensity: intensity });
+      addLog("화산 폭발 · 강도 " + power + "/10", "분화구 반경 " + Math.round(radius) + "m(모형 지도 기준). 화산재가 햇빛을 가려 먹이사슬에 장기 영향을 줍니다.", "volcano");
+      updateUi(true);
+    }
+
+    function setSurvivalBaseline(before, label) {
+      survivalBaseline = Object.assign({}, before);
+      typeOrder.forEach(function (type) { delete survivalBaseline[type + "_logged"]; });
+      lastDisaster = { day: Math.floor(simDay), label: label };
+    }
+
+    function resizeCanvas() {
+      var rect = world.getBoundingClientRect();
+      var ratio = DPR;
+      world.width = Math.max(1, Math.round(rect.width * ratio));
+      world.height = Math.max(1, Math.round(rect.height * ratio));
+      ctx.setTransform(world.width / W, 0, 0, world.height / H, 0, 0);
+      var cRect = chart.getBoundingClientRect();
+      chart.width = Math.max(1, Math.round(cRect.width * ratio));
+      chart.height = Math.max(1, Math.round(cRect.height * ratio));
+      chartCtx.setTransform(chart.width / 1000, 0, 0, chart.height / 220, 0, 0);
+    }
+
+    function drawBackground() {
+      var ash = conditions.ash;
+      var light = getLight();
+      var sky = ctx.createLinearGradient(0, 0, 0, H);
+      sky.addColorStop(0, "rgb(" + Math.round(14 + 25 * light) + "," + Math.round(37 + 62 * light) + "," + Math.round(42 + 37 * light) + ")");
+      sky.addColorStop(.50, "rgb(" + Math.round(26 + 30 * light) + "," + Math.round(70 + 65 * light) + "," + Math.round(54 + 35 * light) + ")");
+      sky.addColorStop(1, "rgb(" + Math.round(20 + 18 * light) + "," + Math.round(63 + 44 * light) + "," + Math.round(34 + 18 * light) + ")");
+      ctx.fillStyle = sky; ctx.fillRect(0, 0, W, H);
+      var glow = ctx.createRadialGradient(W*.22, H*.08, 20, W*.22, H*.08, 460);
+      glow.addColorStop(0, "rgba(255,248,194," + (.19 * light) + ")");
+      glow.addColorStop(1, "rgba(255,248,194,0)");
+      ctx.fillStyle = glow; ctx.fillRect(0,0,W,H);
+      for (var i = 0; i < 24; i++) {
+        var x = (i * 79 + 32) % W;
+        var y = 85 + (i * 47) % 300;
+        ctx.fillStyle = "rgba(28,77,51,.28)";
+        ctx.beginPath(); ctx.arc(x, y, 18 + (i % 5) * 8, 0, Math.PI * 2); ctx.fill();
+      }
+      if (ash > .01) {
+        ctx.fillStyle = "rgba(99,96,83," + (ash * .58) + ")";
+        ctx.fillRect(0,0,W,H);
+        for (var a = 0; a < Math.round(40 * ash); a++) {
+          var px = (a * 149 + simDay * 12) % W;
+          var py = (a * 71 + simDay * 5) % H;
+          ctx.fillStyle = "rgba(210,207,189," + (.10 + ash * .17) + ")";
+          ctx.beginPath(); ctx.arc(px, py, 1 + (a % 4), 0, Math.PI * 2); ctx.fill();
+        }
+      }
+      ctx.fillStyle = "rgba(0,0,0,.10)";
+      for (var l = 0; l < 6; l++) ctx.fillRect(0, H - l * 60, W, 1);
+    }
+
+    function drawPlants() {
+      for (var i = 0; i < animals.plant.length; i++) {
+        var plant = animals.plant[i];
+        var size = 2.6 + (plant.age % 17) / 17 * 2.7;
+        ctx.save();
+        ctx.translate(plant.x, plant.y);
+        ctx.strokeStyle = "rgba(106,224,116,.92)";
+        ctx.lineWidth = 1.15;
+        ctx.beginPath();
+        ctx.moveTo(0, 2); ctx.lineTo(-size * .65, -size);
+        ctx.moveTo(0, 2); ctx.lineTo(0, -size * 1.45);
+        ctx.moveTo(0, 2); ctx.lineTo(size * .72, -size * .72);
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+
+    function drawAnimal(animal) {
+      var d = defs[animal.type];
+      var angle = Math.atan2(animal.vy, animal.vx) || 0;
+      var size = d.size;
+      ctx.save();
+      ctx.translate(animal.x, animal.y);
+      ctx.rotate(angle);
+      ctx.shadowColor = rgba(d.color, .6);
+      ctx.shadowBlur = 8;
+      if (animal.type === "grazer") {
+        ctx.fillStyle = d.color;
+        ctx.beginPath(); ctx.ellipse(0,0,size, size*.66, 0, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = "rgba(255,255,255,.72)";
+        ctx.beginPath(); ctx.arc(size*.46, -size*.20, 1.3, 0, Math.PI*2); ctx.fill();
+      } else if (animal.type === "meso") {
+        ctx.fillStyle = d.color;
+        ctx.beginPath();
+        ctx.moveTo(size, 0); ctx.lineTo(-size*.55, -size*.72); ctx.lineTo(-size*.28, 0); ctx.lineTo(-size*.55, size*.72); ctx.closePath(); ctx.fill();
+      } else {
+        ctx.fillStyle = d.color;
+        ctx.beginPath();
+        ctx.moveTo(size,0); ctx.lineTo(-size*.74,-size*.73); ctx.lineTo(-size*.37,0); ctx.lineTo(-size*.74,size*.73); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = "rgba(255,242,221,.85)";
+        ctx.beginPath(); ctx.arc(size*.34, -size*.22, 1.2, 0, Math.PI*2); ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawEffects() {
+      effects.forEach(function (effect) {
+        var progress = effect.age / effect.life;
+        var visibleRadius = effect.radius * Math.min(1.15, progress * 1.7);
+        if (effect.type === "meteor") {
+          var flash = Math.max(0, 1 - progress * 4);
+          ctx.fillStyle = "rgba(255,221,139," + (.55 * flash) + ")";
+          ctx.beginPath(); ctx.arc(effect.x, effect.y, visibleRadius * .43, 0, Math.PI*2); ctx.fill();
+          ctx.strokeStyle = "rgba(255,118,71," + (1 - progress) + ")";
+          ctx.lineWidth = 3;
+          ctx.beginPath(); ctx.arc(effect.x, effect.y, visibleRadius, 0, Math.PI*2); ctx.stroke();
+          ctx.strokeStyle = "rgba(255,213,132," + ((1 - progress) * .5) + ")";
+          ctx.lineWidth = 1;
+          ctx.beginPath(); ctx.arc(effect.x, effect.y, visibleRadius * .72, 0, Math.PI*2); ctx.stroke();
+          ctx.fillStyle = "rgba(28,20,13,.58)";
+          ctx.beginPath(); ctx.arc(effect.x, effect.y, Math.min(effect.radius*.22, 45), 0, Math.PI*2); ctx.fill();
+        } else {
+          ctx.fillStyle = "rgba(255,105,49," + (.26 * (1-progress)) + ")";
+          ctx.beginPath(); ctx.arc(effect.x, effect.y, effect.radius * .42, 0, Math.PI*2); ctx.fill();
+          ctx.fillStyle = "rgba(63,51,44," + (.55 * (1-progress)) + ")";
+          for (var s = 0; s < 8; s++) {
+            var sx = effect.x + Math.sin(s * 2.1) * (9 + s*4);
+            var sy = effect.y - 15 - s*6 - progress * 80;
+            ctx.beginPath(); ctx.arc(sx, sy, 12 + s*2, 0, Math.PI*2); ctx.fill();
+          }
+          ctx.strokeStyle = "rgba(255,139,68," + (1-progress) + ")";
+          ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(effect.x,effect.y,visibleRadius,0,Math.PI*2);ctx.stroke();
+        }
+      });
+    }
+
+    function drawTarget() {
+      if (!target) return;
+      var pulse = 8 + Math.sin(performance.now() / 160) * 2;
+      ctx.save();
+      ctx.strokeStyle = "rgba(223,255,228,.92)";
+      ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.arc(target.x,target.y,pulse,0,Math.PI*2);ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(target.x-pulse-5,target.y);ctx.lineTo(target.x+pulse+5,target.y);
+      ctx.moveTo(target.x,target.y-pulse-5);ctx.lineTo(target.x,target.y+pulse+5);
+      ctx.stroke(); ctx.restore();
+    }
+
+    function drawWorld() {
+      drawBackground();
+      drawPlants();
+      ["grazer", "meso", "apex"].forEach(function (type) {
+        animals[type].forEach(drawAnimal);
+      });
+      drawEffects();
+      drawTarget();
+      var density = animals.plant.length / defs.plant.initial;
+      if (density < .17) {
+        ctx.fillStyle = "rgba(244,137,79,.10)";
+        ctx.fillRect(0,0,W,H);
+      }
+    }
+
+    function drawChart() {
+      chartCtx.clearRect(0,0,1000,220);
+      chartCtx.fillStyle = "rgba(5,18,13,.33)";
+      chartCtx.fillRect(0,0,1000,220);
+      var pad = { left: 44, right: 20, top: 16, bottom: 29 };
+      var pw = 1000 - pad.left - pad.right;
+      var ph = 220 - pad.top - pad.bottom;
+      [0, 50, 100, 150, 200].forEach(function (tick) {
+        var y = pad.top + ph - (tick / 200) * ph;
+        chartCtx.strokeStyle = "rgba(211,255,219,.10)";
+        chartCtx.lineWidth = 1;
+        chartCtx.beginPath(); chartCtx.moveTo(pad.left,y); chartCtx.lineTo(1000-pad.right,y); chartCtx.stroke();
+        chartCtx.fillStyle = "rgba(171,201,178,.72)";
+        chartCtx.font = "10px system-ui";
+        chartCtx.fillText(tick + "%", 4, y + 3);
+      });
+      if (history.length < 2) return;
+      var firstDay = history[0].day;
+      var lastDay = history[history.length - 1].day;
+      var span = Math.max(1, lastDay - firstDay);
+      typeOrder.forEach(function(type) {
+        chartCtx.beginPath();
+        history.forEach(function(point, index) {
+          var x = pad.left + ((point.day - firstDay) / span) * pw;
+          var value = clamp(point.counts[type] / Math.max(1, initialCounts[type]) * 100, 0, 200);
+          var y = pad.top + ph - (value / 200) * ph;
+          if (index === 0) chartCtx.moveTo(x,y); else chartCtx.lineTo(x,y);
+        });
+        chartCtx.strokeStyle = defs[type].color;
+        chartCtx.globalAlpha = .92;
+        chartCtx.lineWidth = type === "plant" ? 1.65 : 2.05;
+        chartCtx.stroke();
+      });
+      chartCtx.globalAlpha = 1;
+      chartCtx.fillStyle = "rgba(171,201,178,.78)";
+      chartCtx.font = "10px system-ui";
+      chartCtx.fillText(Math.floor(firstDay) + "일", pad.left, 212);
+      chartCtx.textAlign = "right";
+      chartCtx.fillText(Math.floor(lastDay) + "일", 1000-pad.right, 212);
+      chartCtx.textAlign = "left";
+    }
+
+    function getStatus(type, current, baseline) {
+      if (current === 0) return { label: "지역 멸종", className: "extinct" };
+      var percent = toPercent(current, baseline);
+      if (percent < 20) return { label: "위급", className: "critical" };
+      if (percent < 55) return { label: "감소", className: "critical" };
+      return { label: "생존", className: "safe" };
+    }
+
+    function updateUi(force) {
+      var counts = countAll();
+      typeOrder.forEach(function(type) {
+        var percentage = toPercent(counts[type], initialCounts[type]);
+        document.getElementById("count-" + type).textContent = formatCount(counts[type]);
+        document.getElementById("detail-" + type).textContent = "초기 대비 " + Math.round(percentage) + "%";
+      });
+
+      document.getElementById("dayStat").textContent = ageText();
+      document.getElementById("sunStat").textContent = Math.round(getLight() * 100) + "%";
+      document.getElementById("ashStat").textContent = Math.round(conditions.ash * 100) + "%";
+      var ecosystemState = getLight() < .47 ? "초원 생태계 · 일조량 급감" : conditions.heat > .22 ? "초원 생태계 · 고온 스트레스" : "초원 생태계 · 안정";
+      document.getElementById("seasonLabel").textContent = ecosystemState;
+      document.getElementById("eventLabel").textContent = lastDisaster ? "마지막 재난: " + lastDisaster.label : "재난 없음";
+
+      var caption = document.getElementById("survivalCaption");
+      caption.textContent = lastDisaster
+        ? lastDisaster.label + " 직전(" + lastDisaster.day.toLocaleString("ko-KR") + "일째)과 현재를 비교합니다. 이후 기아와 회복도 생존율에 반영됩니다."
+        : "아직 재난이 일어나지 않았습니다. 현재 개체 수는 초기 생태계를 기준으로 표시됩니다.";
+      var body = document.getElementById("survivalBody");
+      body.innerHTML = typeOrder.map(function(type) {
+        var base = survivalBaseline[type];
+        var now = counts[type];
+        var percent = toPercent(now, base);
+        var status = getStatus(type, now, base);
+        return '<tr><td><div class="organism"><span class="dot" style="background:' + defs[type].color + '"></span>' + defs[type].short + '</div></td>' +
+          '<td>' + formatCount(base) + '마리</td><td>' + formatCount(now) + '마리</td>' +
+          '<td class="survival-cell"><div class="survival-label">' + Math.round(percent) + '%</div><div class="bar"><span style="width:' + Math.min(percent,100) + '%;background:' + defs[type].color + '"></span></div></td>' +
+          '<td><span class="status ' + status.className + '">' + status.label + '</span></td></tr>';
+      }).join("");
+      if (force) drawChart();
+    }
+
+    function frame(now) {
+      var raw = Math.min(.08, (now - lastFrame) / 1000);
+      lastFrame = now;
+      if (running) {
+        var dt = raw * speed * .29;
+        update(dt);
+      }
+      drawWorld();
+      if (now - lastUi > 170) {
+        updateUi(false);
+        drawChart();
+        lastUi = now;
+      }
+      requestAnimationFrame(frame);
+    }
+
+    function setTargetFromEvent(event) {
+      var rect = world.getBoundingClientRect();
+      target = {
+        x: clamp((event.clientX - rect.left) / rect.width * W, 0, W),
+        y: clamp((event.clientY - rect.top) / rect.height * H, 0, H)
+      };
+      selectTarget = false;
+      document.getElementById("targetButton").classList.remove("active");
+      document.getElementById("targetCopy").textContent = "고정 지점이 선택되었습니다. 다음 재난은 십자선 위치에서 발생합니다.";
+    }
+
+    document.getElementById("speed").addEventListener("input", function (event) {
+      speed = Number(event.target.value);
+      document.getElementById("speedOutput").textContent = speed.toFixed(speed % 1 ? 2 : 0) + "×";
+    });
+    document.getElementById("meteorSize").addEventListener("input", function (event) {
+      document.getElementById("meteorOutput").textContent = Number(event.target.value).toLocaleString("ko-KR") + " m";
+    });
+    document.getElementById("volcanoPower").addEventListener("input", function (event) {
+      document.getElementById("volcanoOutput").textContent = event.target.value + " / 10";
+    });
+    document.getElementById("playButton").addEventListener("click", function () {
+      running = !running;
+      this.textContent = running ? "❚❚ 일시정지" : "▶ 계속하기";
+    });
+    document.getElementById("resetButton").addEventListener("click", reset);
+    document.getElementById("meteorButton").addEventListener("click", causeMeteor);
+    document.getElementById("volcanoButton").addEventListener("click", causeVolcano);
+    document.getElementById("targetButton").addEventListener("click", function () {
+      selectTarget = !selectTarget;
+      this.classList.toggle("active", selectTarget);
+      document.getElementById("targetCopy").textContent = selectTarget
+        ? "지도에서 원하는 위치를 클릭하세요."
+        : target ? "고정 지점이 선택되었습니다. 다음 재난은 십자선 위치에서 발생합니다." : "현재 재난은 무작위 위치에서 발생합니다.";
+    });
+    document.getElementById("randomTargetButton").addEventListener("click", function () {
+      target = null;
+      selectTarget = false;
+      document.getElementById("targetButton").classList.remove("active");
+      document.getElementById("targetCopy").textContent = "현재 재난은 무작위 위치에서 발생합니다.";
+    });
+    world.addEventListener("click", setTargetFromEvent);
+    window.addEventListener("resize", function () { resizeCanvas(); drawChart(); });
+    window.addEventListener("keydown", function (event) {
+      if (event.code === "Space" && event.target === document.body) {
+        event.preventDefault();
+        document.getElementById("playButton").click();
+      }
+      if (event.key.toLowerCase() === "r" && event.target === document.body) reset();
+    });
+
+    resizeCanvas();
+    reset();
+    requestAnimationFrame(frame);
+  })();
+  </script>
+</body>
+</html>
