@@ -1,0 +1,1275 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>생태계 균형 관찰소</title>
+  <style>
+    :root {
+      --ink: #193229;
+      --muted: #597166;
+      --leaf: #2f7d52;
+      --leaf-2: #62aa67;
+      --cream: #fbf8ed;
+      --paper: #fffdf7;
+      --line: #d9e3d4;
+      --sun: #f6be4f;
+      --herb: #c99b4d;
+      --meso: #d76648;
+      --apex: #3d4a69;
+      --danger: #bb4f42;
+      --shadow: 0 16px 42px rgba(37, 68, 50, .12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      font-family: Pretendard, "Noto Sans KR", "Apple SD Gothic Neo", system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 8% 5%, rgba(244, 205, 103, .25), transparent 28rem),
+        radial-gradient(circle at 94% 18%, rgba(98, 170, 103, .16), transparent 30rem),
+        #eff4eb;
+    }
+
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .shell {
+      width: min(1440px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 36px;
+    }
+
+    .hero {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 8px;
+      color: var(--leaf);
+      font-weight: 800;
+      font-size: .78rem;
+      letter-spacing: .08em;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--leaf-2);
+      box-shadow: 0 0 0 5px rgba(98, 170, 103, .16);
+    }
+
+    h1 {
+      margin: 0;
+      letter-spacing: -.055em;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      line-height: 1.08;
+    }
+
+    .subtitle {
+      max-width: 720px;
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: .97rem;
+      line-height: 1.65;
+    }
+
+    .year-card {
+      min-width: 154px;
+      padding: 14px 16px;
+      border: 1px solid rgba(47, 125, 82, .18);
+      border-radius: 17px;
+      background: rgba(255, 253, 247, .75);
+      box-shadow: 0 7px 20px rgba(35, 74, 49, .08);
+      text-align: right;
+    }
+
+    .year-card small { display: block; color: var(--muted); font-weight: 700; }
+    .year-card strong { display: block; margin-top: 3px; color: var(--leaf); font-size: 1.18rem; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .stat {
+      position: relative;
+      overflow: hidden;
+      min-height: 76px;
+      padding: 13px 14px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: rgba(255, 253, 247, .9);
+      box-shadow: 0 6px 16px rgba(39, 67, 52, .06);
+    }
+
+    .stat::after {
+      content: "";
+      position: absolute;
+      width: 52px;
+      height: 52px;
+      right: -18px;
+      bottom: -22px;
+      border-radius: 50%;
+      background: var(--accent, #8cbd76);
+      opacity: .16;
+    }
+
+    .stat small { display: block; color: var(--muted); font-size: .75rem; font-weight: 700; }
+    .stat strong { display: block; margin-top: 5px; color: var(--accent, var(--ink)); font-size: 1.36rem; line-height: 1; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.72fr) minmax(305px, .72fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .panel {
+      border: 1px solid var(--line);
+      border-radius: 22px;
+      background: var(--paper);
+      box-shadow: var(--shadow);
+    }
+
+    .world-panel { overflow: hidden; }
+
+    .canvas-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 255, 255, .52);
+    }
+
+    .canvas-head strong { font-size: .91rem; }
+
+    .badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+
+    .badge {
+      padding: 5px 9px;
+      border-radius: 999px;
+      color: #2a4d3b;
+      background: #edf5e9;
+      font-size: .72rem;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .badge.weather { color: #715219; background: #fff4cf; }
+    .badge.state { color: #4d426e; background: #eeeafa; }
+
+    #worldCanvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      aspect-ratio: 1000 / 620;
+      background: #d9ecbb;
+      touch-action: manipulation;
+    }
+
+    .canvas-note {
+      padding: 11px 16px 13px;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      font-size: .77rem;
+      line-height: 1.55;
+    }
+
+    .side { display: grid; gap: 14px; }
+    .side .panel { padding: 16px; }
+
+    .panel-title {
+      margin: 0 0 12px;
+      font-size: .9rem;
+      letter-spacing: -.025em;
+    }
+
+    .focus {
+      min-height: 108px;
+      padding: 13px;
+      border: 1px solid #dce8d9;
+      border-radius: 15px;
+      background: linear-gradient(135deg, #f7fbf3, #fffdf7);
+    }
+
+    .focus-title { font-size: .88rem; font-weight: 850; }
+    .focus-body { margin-top: 7px; color: var(--muted); font-size: .77rem; line-height: 1.58; }
+
+    .balance {
+      display: flex;
+      gap: 9px;
+      margin-top: 11px;
+      padding: 10px 11px;
+      border-radius: 12px;
+      color: #326849;
+      background: #edf7ec;
+      font-size: .76rem;
+      line-height: 1.45;
+    }
+
+    .balance-dot {
+      flex: 0 0 9px;
+      width: 9px;
+      height: 9px;
+      margin-top: 3px;
+      border-radius: 50%;
+      background: #57a76b;
+    }
+
+    .speed-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .speed-btn, .action-btn, .reset-btn {
+      border: 1px solid #ceddce;
+      border-radius: 10px;
+      background: #fbfdf8;
+      color: #345044;
+      font-weight: 800;
+      transition: .16s ease;
+    }
+
+    .speed-btn { min-width: 42px; padding: 7px 8px; font-size: .75rem; }
+    .speed-btn:hover, .speed-btn.active { border-color: var(--leaf); color: white; background: var(--leaf); }
+
+    .control-label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin: 13px 0 6px;
+      color: #496355;
+      font-size: .76rem;
+      font-weight: 750;
+    }
+
+    .control-label output { color: var(--leaf); font-variant-numeric: tabular-nums; }
+
+    input[type="range"] {
+      width: 100%;
+      accent-color: var(--leaf);
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 7px;
+    }
+
+    .action-btn, .reset-btn { padding: 9px 8px; font-size: .75rem; }
+    .action-btn:hover { transform: translateY(-1px); border-color: var(--leaf-2); background: #f1f8ec; }
+    .action-btn.drought:hover { border-color: #c18251; background: #fff5e8; }
+    .reset-btn { width: 100%; margin-top: 8px; color: #8b4540; border-color: #e8c3bd; background: #fff8f6; }
+    .reset-btn:hover { background: #fff0ec; }
+
+    .chart-wrap { padding-top: 4px; }
+    #chart { display: block; width: 100%; height: 164px; }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: .67rem;
+      font-weight: 750;
+    }
+
+    .legend span { display: inline-flex; align-items: center; gap: 4px; }
+    .legend i { width: 8px; height: 8px; border-radius: 50%; background: var(--c); }
+
+    .event-log { display: grid; gap: 7px; min-height: 104px; }
+    .event {
+      display: grid;
+      grid-template-columns: 45px 1fr;
+      gap: 8px;
+      align-items: start;
+      color: #52685c;
+      font-size: .73rem;
+      line-height: 1.4;
+    }
+    .event time { color: #88a094; font-size: .67rem; font-weight: 800; }
+
+    .food-chain {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
+      margin-top: 16px;
+      padding: 12px 14px;
+      border: 1px solid rgba(47, 125, 82, .14);
+      border-radius: 14px;
+      color: #466254;
+      background: rgba(255, 253, 247, .66);
+      font-size: .74rem;
+      font-weight: 800;
+    }
+    .food-chain b { color: var(--leaf); }
+    .food-chain .arrow { color: #92a694; margin: 0 2px; }
+
+    .footer-note {
+      margin: 12px 2px 0;
+      color: #718479;
+      font-size: .7rem;
+      line-height: 1.55;
+    }
+
+    @media (max-width: 1040px) {
+      .stats { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .layout { grid-template-columns: 1fr; }
+      .side { grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; }
+      .side .panel:last-child { grid-column: 1 / -1; }
+    }
+
+    @media (max-width: 630px) {
+      .shell { width: min(100% - 20px, 1440px); padding-top: 16px; }
+      .hero { align-items: stretch; flex-direction: column; }
+      .year-card { text-align: left; }
+      .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .side { grid-template-columns: 1fr; }
+      .side .panel:last-child { grid-column: auto; }
+      .canvas-head { align-items: flex-start; flex-direction: column; }
+      .badges { justify-content: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="hero">
+      <div>
+        <div class="eyebrow">LIVING SYSTEM LAB</div>
+        <h1>생태계 균형 관찰소</h1>
+        <p class="subtitle">생산자, 초식동물, 중간 포식자, 최상위 포식자가 먹이와 에너지를 주고받는 모습을 관찰해 보세요. 계절과 물의 양을 바꾸면 각 개체군이 어떻게 반응하는지 확인할 수 있습니다.</p>
+      </div>
+      <div class="year-card">
+        <small>현재 생태계 시간</small>
+        <strong id="dayDisplay">1년 · 1일</strong>
+      </div>
+    </header>
+
+    <section class="stats" aria-label="생태계 현재 상태">
+      <div class="stat" style="--accent:#36855a"><small>생산자 · 풀의 밀도</small><strong id="statProducer">0%</strong></div>
+      <div class="stat" style="--accent:var(--herb)"><small>초식동물</small><strong id="statHerbivore">0</strong></div>
+      <div class="stat" style="--accent:var(--meso)"><small>중간 포식자</small><strong id="statMeso">0</strong></div>
+      <div class="stat" style="--accent:var(--apex)"><small>최상위 포식자</small><strong id="statApex">0</strong></div>
+      <div class="stat" style="--accent:#4f93b4"><small>토양 수분</small><strong id="statWater">0%</strong></div>
+      <div class="stat" style="--accent:#8b6945"><small>순환 영양분</small><strong id="statNutrient">0%</strong></div>
+    </section>
+
+    <section class="layout">
+      <section class="panel world-panel" aria-label="생태계 시뮬레이션">
+        <div class="canvas-head">
+          <strong>관찰 구역 · 개체를 눌러 행동 보기</strong>
+          <div class="badges">
+            <span class="badge" id="seasonBadge">봄</span>
+            <span class="badge weather" id="weatherBadge">맑음</span>
+            <span class="badge state" id="stateBadge">균형 탐색 중</span>
+          </div>
+        </div>
+        <canvas id="worldCanvas" width="1000" height="620" aria-label="생산자와 포식자가 움직이는 생태계"></canvas>
+        <div class="canvas-note">풀을 많이 먹는 초식동물이 늘면 풀이 줄고, 먹이가 많아진 포식자가 뒤이어 늘어납니다. 포식자가 너무 많아지면 먹이가 줄어 포식자 수도 다시 감소합니다.</div>
+      </section>
+
+      <aside class="side">
+        <section class="panel">
+          <h2 class="panel-title">관찰 대상</h2>
+          <div class="focus">
+            <div class="focus-title" id="focusTitle">개체를 선택해 보세요</div>
+            <div class="focus-body" id="focusBody">움직이는 동물을 누르면 현재 에너지와 행동을 확인할 수 있습니다.</div>
+          </div>
+          <div class="balance"><span class="balance-dot" id="balanceDot"></span><span id="balanceText">생산자와 소비자가 서로 영향을 주며 균형점을 찾아가고 있습니다.</span></div>
+        </section>
+
+        <section class="panel">
+          <h2 class="panel-title">시간과 환경</h2>
+          <div class="speed-row" aria-label="시뮬레이션 속도">
+            <button class="speed-btn" data-speed="0">일시정지</button>
+            <button class="speed-btn" data-speed="0.5">0.5×</button>
+            <button class="speed-btn active" data-speed="1">1×</button>
+            <button class="speed-btn" data-speed="2">2×</button>
+            <button class="speed-btn" data-speed="4">4×</button>
+            <button class="speed-btn" data-speed="8">8×</button>
+          </div>
+          <label class="control-label" for="sunRange">햇빛 <output id="sunOutput">100%</output></label>
+          <input id="sunRange" type="range" min="45" max="155" value="100">
+          <label class="control-label" for="rainRange">평균 강수량 <output id="rainOutput">100%</output></label>
+          <input id="rainRange" type="range" min="45" max="160" value="100">
+        </section>
+
+        <section class="panel">
+          <h2 class="panel-title">실험하기</h2>
+          <div class="action-grid">
+            <button class="action-btn" data-action="rain">비 내리기</button>
+            <button class="action-btn drought" data-action="drought">가뭄 만들기</button>
+            <button class="action-btn" data-action="plant">생산자 심기</button>
+            <button class="action-btn" data-action="herbivore">초식동물 +1</button>
+            <button class="action-btn" data-action="mesopredator">중간 포식자 +1</button>
+            <button class="action-btn" data-action="apex">최상위 포식자 +1</button>
+          </div>
+          <button class="reset-btn" id="resetBtn">처음 상태로 되돌리기</button>
+        </section>
+
+        <section class="panel">
+          <h2 class="panel-title">개체 수 변화</h2>
+          <div class="chart-wrap"><canvas id="chart" aria-label="개체 수 변화 그래프"></canvas></div>
+          <div class="legend">
+            <span><i style="--c:#36855a"></i>생산자 × 60</span>
+            <span><i style="--c:var(--herb)"></i>초식동물</span>
+            <span><i style="--c:var(--meso)"></i>중간 × 4</span>
+            <span><i style="--c:var(--apex)"></i>최상위 × 6</span>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2 class="panel-title">생태계 기록</h2>
+          <div class="event-log" id="eventLog" aria-live="polite"></div>
+        </section>
+      </aside>
+    </section>
+
+    <div class="food-chain"><b>햇빛 · 물 · 영양분</b><span class="arrow">→</span><b>생산자</b><span class="arrow">→</span>초식동물<span class="arrow">→</span>중간 포식자<span class="arrow">→</span>최상위 포식자<span class="arrow">→</span>분해 · 영양분 순환</div>
+    <p class="footer-note">이 프로그램은 먹이사슬과 개체군 변화의 원리를 이해하기 위한 단순화된 모형입니다. 실제 생태계는 서식지, 질병, 경쟁, 이주 등 더 많은 요소의 영향을 받습니다.</p>
+  </main>
+
+  <script>
+    (() => {
+      "use strict";
+
+      const W = 1000;
+      const H = 620;
+      const COLS = 25;
+      const ROWS = 16;
+      const CELL_W = W / COLS;
+      const CELL_H = H / ROWS;
+      const canvas = document.getElementById("worldCanvas");
+      const ctx = canvas.getContext("2d");
+      const chart = document.getElementById("chart");
+      const chartCtx = chart.getContext("2d");
+
+      const ui = {
+        day: document.getElementById("dayDisplay"),
+        season: document.getElementById("seasonBadge"),
+        weather: document.getElementById("weatherBadge"),
+        state: document.getElementById("stateBadge"),
+        producer: document.getElementById("statProducer"),
+        herbivore: document.getElementById("statHerbivore"),
+        meso: document.getElementById("statMeso"),
+        apex: document.getElementById("statApex"),
+        water: document.getElementById("statWater"),
+        nutrient: document.getElementById("statNutrient"),
+        focusTitle: document.getElementById("focusTitle"),
+        focusBody: document.getElementById("focusBody"),
+        balanceText: document.getElementById("balanceText"),
+        balanceDot: document.getElementById("balanceDot"),
+        log: document.getElementById("eventLog"),
+        sun: document.getElementById("sunRange"),
+        rain: document.getElementById("rainRange"),
+        sunOutput: document.getElementById("sunOutput"),
+        rainOutput: document.getElementById("rainOutput")
+      };
+
+      const species = {
+        herbivore: {
+          label: "초식동물", short: "초식", color: "#c99b4d", pale: "#fff1cf",
+          radius: 7, speed: 48, metabolism: 0.92, meal: 0,
+          mature: 8, reproduceAt: 88, birthCost: 38, reproduceEvery: 16,
+          maxAge: 78, role: "생산자를 먹으며, 중간 포식자와 최상위 포식자의 먹이가 됩니다."
+        },
+        mesopredator: {
+          label: "중간 포식자", short: "중간", color: "#d76648", pale: "#ffe1d3",
+          radius: 8.5, speed: 57, metabolism: 1.17, meal: 36,
+          mature: 11, reproduceAt: 91, birthCost: 42, reproduceEvery: 23,
+          maxAge: 96, role: "초식동물을 사냥하지만, 최상위 포식자에게도 먹이가 됩니다."
+        },
+        apex: {
+          label: "최상위 포식자", short: "최상위", color: "#3d4a69", pale: "#dfe5f5",
+          radius: 10, speed: 61, metabolism: 1.06, meal: 50,
+          mature: 16, reproduceAt: 94, birthCost: 48, reproduceEvery: 34,
+          maxAge: 120, role: "먹이사슬의 상위에서 중간 포식자와 초식동물의 수를 조절합니다."
+        }
+      };
+
+      const seasonData = [
+        { name: "봄", growth: 1.22, sky: "#bde5ed", tint: "#b9d983", icon: "새싹이 자랍니다" },
+        { name: "여름", growth: 1.04, sky: "#a9d7ed", tint: "#8dc568", icon: "생산이 활발합니다" },
+        { name: "가을", growth: 0.72, sky: "#d5d49e", tint: "#c7ad62", icon: "생산이 느려집니다" },
+        { name: "겨울", growth: 0.27, sky: "#cad9e3", tint: "#a7baa5", icon: "생산이 크게 줄어듭니다" }
+      ];
+
+      let world;
+      let animals = [];
+      let particles = [];
+      let history = [];
+      let logs = [];
+      let nextId = 1;
+      let speed = 1;
+      let selectedId = null;
+      let lastFrame = performance.now();
+      let lastPanelDraw = 0;
+      let localLogCooldown = 0;
+
+      const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+      const random = (min, max) => min + Math.random() * (max - min);
+      const chance = probability => Math.random() < probability;
+      const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
+      const countOf = kind => animals.filter(a => a.alive && a.kind === kind).length;
+      const aliveAnimals = () => animals.filter(a => a.alive);
+
+      function initialize() {
+        world = {
+          day: 18,
+          moisture: 0.74,
+          nutrients: 0.73,
+          decomposing: 0,
+          sunlight: 1,
+          rainfall: 1,
+          event: { type: "clear", until: 0, manual: false },
+          weatherClock: 17,
+          grid: [],
+          recordClock: 0,
+          dayClock: 0
+        };
+        animals = [];
+        particles = [];
+        history = [];
+        logs = [];
+        nextId = 1;
+        selectedId = null;
+        localLogCooldown = 0;
+        for (let row = 0; row < ROWS; row += 1) {
+          for (let col = 0; col < COLS; col += 1) {
+            const centerX = (col + .5) * CELL_W;
+            const centerY = (row + .5) * CELL_H;
+            const riverPenalty = Math.exp(-Math.pow((centerY - 510) / 55, 2)) * .12;
+            world.grid.push({
+              col, row,
+              biomass: clamp(random(.58, .94) + riverPenalty, 0, 1.08),
+              drift: random(0, Math.PI * 2),
+              x: centerX,
+              y: centerY
+            });
+          }
+        }
+        for (let i = 0; i < 28; i += 1) spawn("herbivore");
+        for (let i = 0; i < 7; i += 1) spawn("mesopredator");
+        for (let i = 0; i < 3; i += 1) spawn("apex");
+        logEvent("생산자와 세 단계의 소비자가 관찰 구역에 자리 잡았습니다.");
+        for (let i = 0; i < 16; i += 1) recordHistory();
+        updatePanel();
+      }
+
+      function spawn(kind, x = random(36, W - 36), y = random(74, H - 34), baby = false) {
+        const s = species[kind];
+        const a = {
+          id: nextId += 1,
+          kind,
+          x: clamp(x, 16, W - 16),
+          y: clamp(y, 52, H - 16),
+          vx: random(-20, 20),
+          vy: random(-20, 20),
+          energy: baby ? random(44, 55) : random(57, 82),
+          age: baby ? 0 : random(1, 14),
+          maxAge: s.maxAge * random(.86, 1.18),
+          cooldown: random(0, 4),
+          reproduce: baby ? s.reproduceEvery * .85 : random(0, s.reproduceEvery),
+          decision: random(0, 2.2),
+          target: null,
+          targetCell: null,
+          action: "주변을 살피는 중",
+          alive: true,
+          born: world ? world.day : 0
+        };
+        animals.push(a);
+        return a;
+      }
+
+      function averageBiomass() {
+        return world.grid.reduce((sum, cell) => sum + cell.biomass, 0) / world.grid.length;
+      }
+
+      function getSeason() {
+        const inYear = ((world.day % 360) + 360) % 360;
+        if (inYear < 90) return seasonData[0];
+        if (inYear < 180) return seasonData[1];
+        if (inYear < 270) return seasonData[2];
+        return seasonData[3];
+      }
+
+      function dateLabel() {
+        return `${Math.floor(world.day / 360) + 1}년 · ${Math.floor(world.day % 360) + 1}일`;
+      }
+
+      function weatherLabel() {
+        if (world.event.type === "rain") return "비가 내리는 중";
+        if (world.event.type === "drought") return "가뭄";
+        return "맑음";
+      }
+
+      function triggerWeather(type, duration = 18, manual = true) {
+        world.event = { type, until: world.day + duration, manual };
+        if (type === "rain") {
+          logEvent(manual ? "비가 내립니다. 토양 수분과 생산자 성장이 증가합니다." : "자연 강우가 시작되었습니다.");
+        } else if (type === "drought") {
+          logEvent("가뭄이 시작되었습니다. 생산자와 초식동물의 먹이가 줄어들 수 있습니다.");
+        }
+      }
+
+      function updateWeather(sim) {
+        if (world.day >= world.event.until && world.event.type !== "clear") {
+          const before = world.event.type;
+          world.event = { type: "clear", until: 0, manual: false };
+          if (before === "drought") logEvent("가뭄이 끝났습니다. 토양이 천천히 회복됩니다.");
+        }
+        world.weatherClock -= sim;
+        if (world.weatherClock <= 0 && world.event.type === "clear") {
+          world.weatherClock = random(15, 30) / Math.max(.55, world.rainfall);
+          if (chance(.46 * world.rainfall)) triggerWeather("rain", random(9, 16), false);
+        }
+        const rainBoost = world.event.type === "rain" ? .034 * world.rainfall : 0;
+        const droughtLoss = world.event.type === "drought" ? .026 : 0;
+        const seasonalLoss = getSeason().name === "여름" ? .006 : getSeason().name === "겨울" ? .003 : .004;
+        world.moisture = clamp(world.moisture + (rainBoost - droughtLoss - seasonalLoss) * sim, .06, 1);
+      }
+
+      function updatePlants(sim) {
+        const season = getSeason();
+        const waterEffect = .22 + world.moisture * .78;
+        const eventEffect = world.event.type === "drought" ? .34 : 1;
+        const growth = .0061 * sim * season.growth * world.sunlight * waterEffect * eventEffect;
+        let uptake = 0;
+        for (const cell of world.grid) {
+          const localVariation = .68 + .32 * Math.sin(world.day * .04 + cell.drift);
+          const added = growth * (.65 + Math.random() * .5) * localVariation * (.48 + world.nutrients * .52);
+          cell.biomass = clamp(cell.biomass + added, 0, 1.08);
+          uptake += added;
+        }
+        const recycled = Math.min(world.decomposing, .018 * sim);
+        world.decomposing -= recycled;
+        world.nutrients = clamp(world.nutrients + recycled * .8 - uptake * .0033, .07, 1);
+      }
+
+      function cellAt(x, y) {
+        const col = clamp(Math.floor(x / CELL_W), 0, COLS - 1);
+        const row = clamp(Math.floor(y / CELL_H), 0, ROWS - 1);
+        return world.grid[row * COLS + col];
+      }
+
+      function findPlantCell(animal) {
+        let best = null;
+        let bestScore = -Infinity;
+        for (const cell of world.grid) {
+          const d = Math.hypot(animal.x - cell.x, animal.y - cell.y);
+          if (d > 230) continue;
+          const score = cell.biomass * 1.45 - d / 680 + Math.random() * .04;
+          if (score > bestScore) { bestScore = score; best = cell; }
+        }
+        return best;
+      }
+
+      function nearestPrey(animal) {
+        const preferences = animal.kind === "mesopredator" ? ["herbivore"] : ["mesopredator", "herbivore"];
+        let best = null;
+        let bestScore = Infinity;
+        for (const other of animals) {
+          if (!other.alive || !preferences.includes(other.kind)) continue;
+          const d = distance(animal, other);
+          const preferred = animal.kind === "apex" && other.kind === "mesopredator" ? -26 : 0;
+          const score = d + preferred;
+          if (d < 330 && score < bestScore) { best = other; bestScore = score; }
+        }
+        return best;
+      }
+
+      function nearestThreat(animal) {
+        const dangerous = animal.kind === "herbivore" ? ["mesopredator", "apex"] : animal.kind === "mesopredator" ? ["apex"] : [];
+        let best = null;
+        let bestD = Infinity;
+        for (const other of animals) {
+          if (!other.alive || !dangerous.includes(other.kind)) continue;
+          const d = distance(animal, other);
+          if (d < bestD) { best = other; bestD = d; }
+        }
+        return best && bestD < (animal.kind === "herbivore" ? 125 : 108) ? best : null;
+      }
+
+      function steer(animal, tx, ty, maxSpeed, sim, urgency = 1) {
+        const dx = tx - animal.x;
+        const dy = ty - animal.y;
+        const length = Math.hypot(dx, dy) || 1;
+        const desiredX = dx / length * maxSpeed * urgency;
+        const desiredY = dy / length * maxSpeed * urgency;
+        const turn = clamp(.13 * sim * urgency, .05, .86);
+        animal.vx += (desiredX - animal.vx) * turn;
+        animal.vy += (desiredY - animal.vy) * turn;
+      }
+
+      function wander(animal, sim) {
+        if (animal.decision <= 0 || !animal.target) {
+          const angle = Math.random() * Math.PI * 2;
+          const distanceToGo = random(50, 170);
+          animal.target = {
+            x: clamp(animal.x + Math.cos(angle) * distanceToGo, 20, W - 20),
+            y: clamp(animal.y + Math.sin(angle) * distanceToGo, 55, H - 20)
+          };
+          animal.decision = random(.8, 2.3);
+        }
+        steer(animal, animal.target.x, animal.target.y, species[animal.kind].speed * .47, sim);
+      }
+
+      function move(animal, sim) {
+        animal.x += animal.vx * sim;
+        animal.y += animal.vy * sim;
+        const margin = 13;
+        if (animal.x < margin || animal.x > W - margin) animal.vx *= -.72;
+        if (animal.y < 52 || animal.y > H - margin) animal.vy *= -.72;
+        animal.x = clamp(animal.x, margin, W - margin);
+        animal.y = clamp(animal.y, 52, H - margin);
+      }
+
+      function carryingCapacity(kind) {
+        const plants = averageBiomass();
+        const herbs = countOf("herbivore");
+        const meso = countOf("mesopredator");
+        if (kind === "herbivore") return Math.max(8, Math.floor(12 + plants * 52));
+        if (kind === "mesopredator") return Math.max(1, Math.floor(1 + herbs / 3.7));
+        return Math.max(1, Math.floor(1 + meso / 2.5));
+      }
+
+      function tryReproduce(animal, sim, newborns) {
+        const spec = species[animal.kind];
+        if (animal.age < spec.mature || animal.reproduce > 0 || animal.energy < spec.reproduceAt) return;
+        if (countOf(animal.kind) >= carryingCapacity(animal.kind)) return;
+        const probability = .032 * sim;
+        if (!chance(probability)) return;
+        animal.energy -= spec.birthCost;
+        animal.reproduce = spec.reproduceEvery;
+        newborns.push({
+          kind: animal.kind,
+          x: animal.x + random(-13, 13),
+          y: animal.y + random(-13, 13)
+        });
+        if (localLogCooldown <= 0) {
+          logEvent(`${spec.label} 한 마리가 태어났습니다.`);
+          localLogCooldown = 5;
+        }
+      }
+
+      function die(animal, reason) {
+        if (!animal.alive) return;
+        animal.alive = false;
+        world.decomposing += animal.kind === "apex" ? .12 : animal.kind === "mesopredator" ? .085 : .052;
+        particles.push({ x: animal.x, y: animal.y, life: 1.4, label: reason === "hungry" ? "먹이 부족" : "영양분으로 순환" });
+        if (selectedId === animal.id) selectedId = null;
+      }
+
+      function updateHerbivore(animal, sim, newborns) {
+        const threat = nearestThreat(animal);
+        if (threat) {
+          animal.action = "포식자를 피해 도망가는 중";
+          steer(animal, animal.x + (animal.x - threat.x) * 2, animal.y + (animal.y - threat.y) * 2, species.herbivore.speed, sim, 1.28);
+          return;
+        }
+        if (animal.decision <= 0 || !animal.targetCell || animal.targetCell.biomass < .14) {
+          animal.targetCell = findPlantCell(animal);
+          animal.decision = random(.7, 1.5);
+        }
+        const cell = animal.targetCell;
+        if (cell && Math.hypot(cell.x - animal.x, cell.y - animal.y) < 19) {
+          const bite = Math.min(cell.biomass, .030 * sim);
+          cell.biomass -= bite;
+          animal.energy = clamp(animal.energy + bite * 128, 0, 100);
+          animal.action = "생산자를 먹는 중";
+          animal.vx *= .76;
+          animal.vy *= .76;
+          tryReproduce(animal, sim, newborns);
+        } else if (cell) {
+          animal.action = "먹이를 찾는 중";
+          steer(animal, cell.x, cell.y, species.herbivore.speed * .72, sim);
+        } else {
+          animal.action = "이동 중";
+          wander(animal, sim);
+        }
+      }
+
+      function updatePredator(animal, sim, newborns) {
+        const spec = species[animal.kind];
+        const threat = nearestThreat(animal);
+        if (threat && animal.energy > 40) {
+          animal.action = "더 큰 포식자를 피하는 중";
+          steer(animal, animal.x + (animal.x - threat.x) * 2, animal.y + (animal.y - threat.y) * 2, spec.speed, sim, 1.18);
+          return;
+        }
+        if (animal.decision <= 0 || !animal.target || !animal.target.alive) {
+          animal.target = nearestPrey(animal);
+          animal.decision = random(.42, .9);
+        }
+        const prey = animal.target;
+        if (prey && prey.alive) {
+          const d = distance(animal, prey);
+          if (d < spec.radius + species[prey.kind].radius + 8 && animal.cooldown <= 0) {
+            die(prey, "hunted");
+            animal.energy = clamp(animal.energy + spec.meal, 0, 100);
+            animal.cooldown = animal.kind === "apex" ? 5.8 : 3.6;
+            animal.action = "먹이를 확보함";
+            particles.push({ x: animal.x, y: animal.y - 12, life: 1.05, label: "+에너지" });
+            tryReproduce(animal, sim, newborns);
+          } else {
+            animal.action = `${species[prey.kind].short}을(를) 추적하는 중`;
+            steer(animal, prey.x, prey.y, spec.speed, sim, animal.energy < 28 ? 1.15 : 1);
+          }
+        } else {
+          animal.action = "먹이를 찾는 중";
+          wander(animal, sim);
+        }
+      }
+
+      function updateAnimals(sim) {
+        const newborns = [];
+        const snapshot = animals.slice();
+        for (const animal of snapshot) {
+          if (!animal.alive) continue;
+          const spec = species[animal.kind];
+          animal.age += sim;
+          animal.energy -= spec.metabolism * sim;
+          animal.cooldown -= sim;
+          animal.reproduce -= sim;
+          animal.decision -= sim;
+          if (animal.energy <= 0 || animal.age > animal.maxAge) {
+            die(animal, "hungry");
+            continue;
+          }
+          if (animal.kind === "herbivore") updateHerbivore(animal, sim, newborns);
+          else updatePredator(animal, sim, newborns);
+          move(animal, sim);
+        }
+        animals = animals.filter(a => a.alive);
+        for (const child of newborns) {
+          const baby = spawn(child.kind, child.x, child.y, true);
+          baby.reproduce = species[baby.kind].reproduceEvery;
+        }
+      }
+
+      function updateParticles(sim) {
+        particles = particles.filter(p => {
+          p.life -= sim * .65;
+          p.y -= sim * 7;
+          return p.life > 0;
+        });
+      }
+
+      function recordHistory() {
+        history.push({
+          plants: averageBiomass(),
+          herbivore: countOf("herbivore"),
+          mesopredator: countOf("mesopredator"),
+          apex: countOf("apex")
+        });
+        if (history.length > 150) history.shift();
+      }
+
+      function update(sim) {
+        if (speed === 0) return;
+        world.day += sim * 1.55;
+        localLogCooldown = Math.max(0, localLogCooldown - sim);
+        updateWeather(sim);
+        updatePlants(sim);
+        updateAnimals(sim);
+        updateParticles(sim);
+        world.recordClock += sim;
+        if (world.recordClock >= 1.3) {
+          world.recordClock = 0;
+          recordHistory();
+        }
+      }
+
+      function mixColor(a, b, amount) {
+        const c1 = a.match(/\w\w/g).map(v => parseInt(v, 16));
+        const c2 = b.match(/\w\w/g).map(v => parseInt(v, 16));
+        const mixed = c1.map((v, i) => Math.round(v + (c2[i] - v) * amount));
+        return `rgb(${mixed.join(",")})`;
+      }
+
+      function drawTerrain() {
+        const season = getSeason();
+        const gradient = ctx.createLinearGradient(0, 0, 0, H);
+        gradient.addColorStop(0, season.sky);
+        gradient.addColorStop(.17, mixColor("b7dfa6", season.tint.replace("#", ""), .35));
+        gradient.addColorStop(1, "9ec883");
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, W, H);
+
+        const sunAlpha = clamp(.22 + world.sunlight * .14, .18, .42);
+        ctx.fillStyle = `rgba(255, 247, 198, ${sunAlpha})`;
+        ctx.beginPath();
+        ctx.arc(855, 75, 38, 0, Math.PI * 2);
+        ctx.fill();
+
+        for (const cell of world.grid) {
+          const b = cell.biomass;
+          const dry = world.event.type === "drought" ? .18 : 0;
+          const hue = 75 + b * 38 - dry * 16;
+          const sat = 26 + b * 37;
+          const light = 58 - b * 17 + dry * 7;
+          ctx.fillStyle = `hsl(${hue} ${sat}% ${light}%)`;
+          ctx.fillRect(cell.col * CELL_W, cell.row * CELL_H, CELL_W + .5, CELL_H + .5);
+          if (b > .16) {
+            const bladeCount = Math.floor(1 + b * 3);
+            ctx.strokeStyle = `rgba(36, ${75 + Math.floor(b * 65)}, 48, ${.24 + b * .22})`;
+            ctx.lineWidth = 1;
+            for (let i = 0; i < bladeCount; i += 1) {
+              const bx = cell.x - 12 + ((i * 17 + cell.row * 9) % 24);
+              const by = cell.y + 10;
+              const blade = 2 + b * 6;
+              ctx.beginPath();
+              ctx.moveTo(bx, by);
+              ctx.quadraticCurveTo(bx + Math.sin(world.day * .08 + cell.drift + i) * 3, by - blade, bx + 1, by - blade - 2);
+              ctx.stroke();
+            }
+          }
+        }
+
+        ctx.fillStyle = "rgba(83, 142, 177, .68)";
+        ctx.beginPath();
+        ctx.moveTo(0, 530);
+        for (let x = 0; x <= W; x += 34) {
+          const y = 532 + Math.sin(x * .018 + world.day * .04) * 8 + Math.sin(x * .049) * 4;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(W, H);
+        ctx.lineTo(0, H);
+        ctx.closePath();
+        ctx.fill();
+
+        if (world.event.type === "rain") drawRain();
+        if (getSeason().name === "겨울") drawSnow();
+        if (world.event.type === "drought") {
+          ctx.fillStyle = "rgba(225, 163, 75, .12)";
+          ctx.fillRect(0, 0, W, H);
+        }
+      }
+
+      function drawRain() {
+        ctx.strokeStyle = "rgba(94, 147, 191, .45)";
+        ctx.lineWidth = 1.3;
+        for (let i = 0; i < 70; i += 1) {
+          const x = (i * 71 + Math.floor(world.day * 41)) % W;
+          const y = (i * 83 + Math.floor(world.day * 47)) % H;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x - 5, y + 12);
+          ctx.stroke();
+        }
+      }
+
+      function drawSnow() {
+        ctx.fillStyle = "rgba(255,255,255,.55)";
+        for (let i = 0; i < 45; i += 1) {
+          const x = (i * 97 + Math.floor(world.day * 15)) % W;
+          const y = (i * 61 + Math.floor(world.day * 18)) % H;
+          ctx.beginPath();
+          ctx.arc(x, y, 1.5 + (i % 3) * .5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      function drawAnimal(animal) {
+        const s = species[animal.kind];
+        const angle = Math.atan2(animal.vy, animal.vx || .001);
+        ctx.save();
+        ctx.translate(animal.x, animal.y);
+        ctx.rotate(angle);
+        ctx.globalAlpha = clamp(.55 + animal.energy / 180, .55, 1);
+        ctx.fillStyle = "rgba(33, 56, 42, .16)";
+        ctx.beginPath();
+        ctx.ellipse(2, s.radius * .72, s.radius * 1.15, s.radius * .42, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (animal.kind === "herbivore") {
+          ctx.fillStyle = s.pale;
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 8, 5.5, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = s.color;
+          ctx.beginPath();
+          ctx.ellipse(-4, -6, 2.1, 5.4, -.3, 0, Math.PI * 2);
+          ctx.ellipse(1, -6, 2.1, 5.4, .18, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = "#3e463e";
+          ctx.beginPath(); ctx.arc(6, -1.5, 1, 0, Math.PI * 2); ctx.fill();
+        } else if (animal.kind === "mesopredator") {
+          ctx.fillStyle = s.color;
+          ctx.beginPath();
+          ctx.ellipse(-1, 0, 9, 6.3, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(3, -4); ctx.lineTo(4.4, -10); ctx.lineTo(7.5, -4); ctx.closePath();
+          ctx.moveTo(-2, -4); ctx.lineTo(-.4, -10); ctx.lineTo(2.2, -4); ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = s.pale;
+          ctx.beginPath(); ctx.ellipse(6, 1.4, 3.5, 2.8, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#3d3a3a";
+          ctx.beginPath(); ctx.arc(7.5, -1.5, .95, 0, Math.PI * 2); ctx.fill();
+        } else {
+          ctx.fillStyle = s.color;
+          ctx.beginPath();
+          ctx.ellipse(-1, 0, 11, 7.1, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(1, -5); ctx.lineTo(2.5, -12); ctx.lineTo(6, -5); ctx.closePath();
+          ctx.moveTo(-4, -5); ctx.lineTo(-2.7, -12); ctx.lineTo(.5, -5); ctx.closePath();
+          ctx.fill();
+          ctx.fillStyle = s.pale;
+          ctx.beginPath(); ctx.ellipse(7, 1.5, 3.9, 2.9, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = "#1e2638";
+          ctx.beginPath(); ctx.arc(8, -1.5, 1, 0, Math.PI * 2); ctx.fill();
+        }
+        if (animal.id === selectedId) {
+          ctx.strokeStyle = "#fffdf5";
+          ctx.lineWidth = 2.4;
+          ctx.beginPath();
+          ctx.arc(0, 0, s.radius + 6, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.fillStyle = "rgba(255,255,255,.92)";
+          ctx.fillRect(-20, -s.radius - 23, 40, 13);
+          ctx.fillStyle = s.color;
+          ctx.textAlign = "center";
+          ctx.font = "bold 8px system-ui";
+          ctx.fillText(s.short, 0, -s.radius - 14);
+        }
+        ctx.restore();
+      }
+
+      function drawOverlay() {
+        ctx.save();
+        ctx.fillStyle = "rgba(24, 50, 40, .64)";
+        ctx.roundRect(18, 16, 264, 43, 10);
+        ctx.fill();
+        ctx.fillStyle = "#f7fbef";
+        ctx.font = "700 12px system-ui";
+        ctx.fillText("생산자 → 초식 → 중간 → 최상위", 32, 35);
+        ctx.fillStyle = "rgba(247, 251, 239, .78)";
+        ctx.font = "10px system-ui";
+        ctx.fillText("개체를 클릭하면 현재 행동을 관찰할 수 있어요.", 32, 50);
+        ctx.restore();
+      }
+
+      function drawParticles() {
+        ctx.save();
+        ctx.textAlign = "center";
+        ctx.font = "bold 9px system-ui";
+        for (const p of particles) {
+          ctx.globalAlpha = clamp(p.life, 0, 1);
+          ctx.fillStyle = p.label === "+에너지" ? "#5a7d46" : "#805a4f";
+          ctx.fillText(p.label, p.x, p.y);
+        }
+        ctx.restore();
+      }
+
+      function draw() {
+        drawTerrain();
+        const ordered = aliveAnimals().sort((a, b) => a.y - b.y);
+        for (const animal of ordered) drawAnimal(animal);
+        drawParticles();
+        drawOverlay();
+      }
+
+      function condition() {
+        const plant = averageBiomass();
+        const herb = countOf("herbivore");
+        const meso = countOf("mesopredator");
+        const apex = countOf("apex");
+        if (plant < .18) return { text: "생산자 부족: 초식동물의 먹이가 줄어드는 중입니다.", color: "#c47439", badge: "생산자 감소" };
+        if (herb === 0) return { text: "초식동물이 사라져 생산자가 빠르게 회복될 수 있습니다.", color: "#bb4f42", badge: "연결 단절" };
+        if (meso === 0 && apex > 0) return { text: "중간 포식자 공백: 최상위 포식자의 먹이 선택지가 줄었습니다.", color: "#b66d3e", badge: "포식 연결 약화" };
+        if (herb > carryingCapacity("herbivore") + 7) return { text: "초식동물이 많아 풀을 빠르게 소비하고 있습니다.", color: "#c47439", badge: "초식 과밀" };
+        if (apex > carryingCapacity("apex") + 1) return { text: "최상위 포식자가 많아 다른 포식자의 수가 줄 수 있습니다.", color: "#8b5c6f", badge: "포식 압력" };
+        return { text: "영양 단계가 연결되어 개체 수가 균형점을 탐색하고 있습니다.", color: "#57a76b", badge: "균형 탐색 중" };
+      }
+
+      function updatePanel() {
+        const plant = averageBiomass();
+        const season = getSeason();
+        const status = condition();
+        ui.day.textContent = dateLabel();
+        ui.season.textContent = `${season.name} · ${season.icon}`;
+        ui.weather.textContent = weatherLabel();
+        ui.state.textContent = status.badge;
+        ui.producer.textContent = `${Math.round(plant * 100)}%`;
+        ui.herbivore.textContent = countOf("herbivore");
+        ui.meso.textContent = countOf("mesopredator");
+        ui.apex.textContent = countOf("apex");
+        ui.water.textContent = `${Math.round(world.moisture * 100)}%`;
+        ui.nutrient.textContent = `${Math.round(world.nutrients * 100)}%`;
+        ui.balanceText.textContent = status.text;
+        ui.balanceDot.style.background = status.color;
+        updateFocus();
+        drawChart();
+      }
+
+      function updateFocus() {
+        const target = animals.find(a => a.id === selectedId && a.alive);
+        if (!target) {
+          ui.focusTitle.textContent = "개체를 선택해 보세요";
+          ui.focusBody.textContent = "움직이는 동물을 누르면 현재 에너지와 행동을 확인할 수 있습니다.";
+          return;
+        }
+        const s = species[target.kind];
+        ui.focusTitle.textContent = `${s.label} · ${target.action}`;
+        ui.focusBody.textContent = `에너지 ${Math.round(target.energy)}% · 나이 ${Math.floor(target.age)}일\n${s.role}`;
+        ui.focusBody.style.whiteSpace = "pre-line";
+      }
+
+      function logEvent(message) {
+        logs.unshift({ day: Math.floor(world?.day || 0), message });
+        logs = logs.slice(0, 5);
+        ui.log.innerHTML = logs.slice(0, 4).map(event => `<div class="event"><time>${event.day}일</time><span>${event.message}</span></div>`).join("");
+      }
+
+      function drawChart() {
+        const rect = chart.getBoundingClientRect();
+        const ratio = window.devicePixelRatio || 1;
+        const width = Math.max(260, Math.round(rect.width * ratio));
+        const height = Math.round(164 * ratio);
+        if (chart.width !== width || chart.height !== height) {
+          chart.width = width;
+          chart.height = height;
+        }
+        chartCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+        const cssWidth = width / ratio;
+        const cssHeight = height / ratio;
+        chartCtx.clearRect(0, 0, cssWidth, cssHeight);
+        const pad = { l: 26, r: 9, t: 8, b: 20 };
+        const innerW = cssWidth - pad.l - pad.r;
+        const innerH = cssHeight - pad.t - pad.b;
+        const maxValue = Math.max(60, ...history.map(h => Math.max(h.plants * 60, h.herbivore, h.mesopredator * 4, h.apex * 6)));
+        chartCtx.strokeStyle = "#e5eee2";
+        chartCtx.lineWidth = 1;
+        chartCtx.font = "10px system-ui";
+        chartCtx.fillStyle = "#8ba096";
+        for (let step = 0; step <= 3; step += 1) {
+          const y = pad.t + innerH * (step / 3);
+          chartCtx.beginPath(); chartCtx.moveTo(pad.l, y); chartCtx.lineTo(cssWidth - pad.r, y); chartCtx.stroke();
+          const val = Math.round(maxValue * (1 - step / 3));
+          chartCtx.fillText(val, 1, y + 3);
+        }
+        const series = [
+          { color: "#36855a", value: h => h.plants * 60 },
+          { color: "#c99b4d", value: h => h.herbivore },
+          { color: "#d76648", value: h => h.mesopredator * 4 },
+          { color: "#3d4a69", value: h => h.apex * 6 }
+        ];
+        for (const line of series) {
+          if (!history.length) continue;
+          chartCtx.strokeStyle = line.color;
+          chartCtx.lineWidth = 2;
+          chartCtx.lineJoin = "round";
+          chartCtx.beginPath();
+          history.forEach((item, index) => {
+            const x = pad.l + (history.length === 1 ? 0 : index / (history.length - 1) * innerW);
+            const y = pad.t + innerH - clamp(line.value(item) / maxValue, 0, 1.15) * innerH;
+            if (index === 0) chartCtx.moveTo(x, y); else chartCtx.lineTo(x, y);
+          });
+          chartCtx.stroke();
+        }
+        chartCtx.fillStyle = "#8ba096";
+        chartCtx.fillText("과거", pad.l, cssHeight - 5);
+        chartCtx.textAlign = "right";
+        chartCtx.fillText("현재", cssWidth - pad.r, cssHeight - 5);
+        chartCtx.textAlign = "start";
+      }
+
+      function plantProducer() {
+        for (const cell of world.grid) cell.biomass = clamp(cell.biomass + random(.11, .28), 0, 1.08);
+        world.nutrients = clamp(world.nutrients + .08, 0, 1);
+        logEvent("생산자를 심었습니다. 초식동물이 이용할 수 있는 먹이가 늘었습니다.");
+      }
+
+      function handleAction(action) {
+        if (action === "rain") triggerWeather("rain", 20, true);
+        else if (action === "drought") triggerWeather("drought", 22, true);
+        else if (action === "plant") plantProducer();
+        else if (species[action]) {
+          spawn(action);
+          logEvent(`${species[action].label} 한 마리를 관찰 구역에 추가했습니다.`);
+        }
+      }
+
+      function handleCanvasClick(event) {
+        const rect = canvas.getBoundingClientRect();
+        const x = (event.clientX - rect.left) / rect.width * W;
+        const y = (event.clientY - rect.top) / rect.height * H;
+        let picked = null;
+        let best = 28;
+        for (const animal of animals) {
+          const d = Math.hypot(animal.x - x, animal.y - y);
+          if (animal.alive && d < best) { picked = animal; best = d; }
+        }
+        selectedId = picked ? picked.id : null;
+        updatePanel();
+      }
+
+      document.querySelectorAll(".speed-btn").forEach(button => {
+        button.addEventListener("click", () => {
+          speed = Number(button.dataset.speed);
+          document.querySelectorAll(".speed-btn").forEach(item => item.classList.toggle("active", item === button));
+          logEvent(speed === 0 ? "시간을 멈췄습니다." : `시간을 ${speed}배속으로 흐르게 했습니다.`);
+        });
+      });
+
+      document.querySelectorAll("[data-action]").forEach(button => {
+        button.addEventListener("click", () => {
+          handleAction(button.dataset.action);
+          updatePanel();
+        });
+      });
+
+      document.getElementById("resetBtn").addEventListener("click", () => {
+        speed = 1;
+        document.querySelectorAll(".speed-btn").forEach(item => item.classList.toggle("active", item.dataset.speed === "1"));
+        initialize();
+        logEvent("관찰 구역을 처음 상태로 되돌렸습니다.");
+      });
+
+      ui.sun.addEventListener("input", () => {
+        world.sunlight = Number(ui.sun.value) / 100;
+        ui.sunOutput.value = `${ui.sun.value}%`;
+      });
+      ui.rain.addEventListener("input", () => {
+        world.rainfall = Number(ui.rain.value) / 100;
+        ui.rainOutput.value = `${ui.rain.value}%`;
+      });
+      canvas.addEventListener("pointerdown", handleCanvasClick);
+      window.addEventListener("resize", drawChart);
+
+      function frame(now) {
+        const realDelta = Math.min(.06, (now - lastFrame) / 1000);
+        lastFrame = now;
+        update(realDelta * speed);
+        draw();
+        if (now - lastPanelDraw > 280) {
+          updatePanel();
+          lastPanelDraw = now;
+        }
+        requestAnimationFrame(frame);
+      }
+
+      initialize();
+      requestAnimationFrame(frame);
+    })();
+  </script>
+</body>
+</html>
