@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#081521">
+  <title>고소 위험 안전 대응 훈련실</title>
+  <style>
+    :root {
+      --ink: #eef7ff;
+      --muted: #a9bfce;
+      --night: #081521;
+      --panel: rgba(13, 35, 50, .88);
+      --line: rgba(156, 221, 242, .20);
+      --mint: #6ce2bd;
+      --sun: #ffd36b;
+      --danger: #ff7777;
+      --blue: #63b7ff;
+    }
+    * { box-sizing: border-box; }
+    body {
+      min-width: 320px;
+      min-height: 100vh;
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 15% 0%, #1f5d78 0, transparent 34rem),
+        radial-gradient(circle at 100% 100%, #183e53 0, transparent 42rem),
+        var(--night);
+      font-family: Pretendard, "Noto Sans KR", system-ui, sans-serif;
+    }
+    button, select { font: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+    .shell { width: min(1400px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0 40px; }
+    .eyebrow {
+      display: inline-flex; align-items: center; gap: 8px; color: var(--mint);
+      font-size: .75rem; font-weight: 800; letter-spacing: .16em;
+    }
+    .eyebrow::before { width: 8px; height: 8px; border-radius: 50%; background: var(--mint); box-shadow: 0 0 18px var(--mint); content: ""; }
+    header { display: flex; justify-content: space-between; align-items: end; gap: 26px; margin: 12px 0 20px; }
+    h1 { max-width: 790px; margin: 0; font-size: clamp(2rem, 4vw, 3.8rem); line-height: 1.08; letter-spacing: -.06em; }
+    .subtitle { max-width: 610px; margin: 12px 0 0; color: var(--muted); font-size: clamp(.93rem, 1.7vw, 1.05rem); line-height: 1.65; }
+    .safety-callout {
+      display: flex; align-items: center; gap: 13px; margin: 0 0 22px; padding: 14px 16px;
+      border: 1px solid rgba(255, 211, 107, .45); border-radius: 15px; background: rgba(255, 211, 107, .09); color: #fff3cf;
+      font-size: .92rem; line-height: 1.5;
+    }
+    .safety-callout strong { color: var(--sun); }
+    .emergency-link {
+      flex: none; display: inline-flex; align-items: center; justify-content: center; min-height: 39px; padding: 0 13px;
+      border: 1px solid #ffd36b; border-radius: 9px; color: #1a2630; background: #ffd36b; font-weight: 900; text-decoration: none;
+    }
+    .toolbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+      margin-bottom: 18px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 16px; background: rgba(9, 29, 43, .7);
+      box-shadow: 0 16px 40px rgba(0, 0, 0, .14);
+    }
+    .scenario-picker { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .scenario-picker label { color: var(--muted); font-size: .86rem; font-weight: 700; }
+    select {
+      min-width: 174px; padding: 10px 34px 10px 12px; border: 1px solid var(--line); border-radius: 10px; outline: none;
+      color: var(--ink); background: #102d3e; cursor: pointer;
+    }
+    .toolbar-actions { display: flex; gap: 9px; }
+    .small-button, .action-button {
+      border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: #14364a; font-weight: 800; cursor: pointer; transition: transform .16s, background .16s, border-color .16s, opacity .16s;
+    }
+    .small-button { padding: 10px 13px; font-size: .87rem; }
+    .small-button.primary { border-color: #50d3ad; background: #1e695b; }
+    .small-button:hover, .action-button:hover { transform: translateY(-2px); border-color: rgba(194, 245, 255, .7); }
+    .small-button:focus-visible, .action-button:focus-visible, select:focus-visible, .emergency-link:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+    .dashboard { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(320px, .85fr); gap: 18px; }
+    .panel { overflow: hidden; border: 1px solid var(--line); border-radius: 20px; background: var(--panel); box-shadow: 0 22px 60px rgba(0, 0, 0, .18); }
+    .scene-panel { position: relative; min-height: 570px; }
+    canvas { display: block; width: 100%; height: 100%; min-height: 570px; }
+    .scene-hud { position: absolute; top: 15px; left: 15px; right: 15px; display: flex; justify-content: space-between; gap: 10px; pointer-events: none; }
+    .scene-chip {
+      max-width: 270px; padding: 9px 11px; border: 1px solid rgba(225, 248, 255, .22); border-radius: 10px; background: rgba(4, 17, 27, .72);
+      backdrop-filter: blur(8px); font-size: .78rem; line-height: 1.45;
+    }
+    .scene-chip span { display: block; margin-bottom: 2px; color: var(--mint); font-size: .67rem; font-weight: 900; letter-spacing: .09em; }
+    .score-chip { text-align: right; }
+    .score-chip b { color: var(--sun); font-size: 1.17rem; }
+    .side { display: grid; gap: 18px; align-content: start; }
+    .card { padding: 18px; }
+    .card-title { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 12px; font-size: 1.02rem; letter-spacing: -.02em; }
+    .card-title span { color: var(--muted); font-size: .75rem; font-weight: 700; letter-spacing: .04em; }
+    .meter { display: grid; grid-template-columns: 118px 1fr; gap: 16px; align-items: center; }
+    .gauge {
+      --score: 8; width: 118px; aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%;
+      background: conic-gradient(var(--mint) calc(var(--score) * 1%), rgba(156, 221, 242, .12) 0);
+      transition: background .45s ease;
+    }
+    .gauge::before { position: absolute; width: 94px; aspect-ratio: 1; border-radius: 50%; background: #102a3a; content: ""; }
+    .gauge-value { z-index: 1; text-align: center; font-size: 1.7rem; font-weight: 900; letter-spacing: -.06em; }
+    .gauge-value small { display: block; color: var(--muted); font-size: .63rem; letter-spacing: .05em; }
+    .meter-copy b { display: block; color: #fff; font-size: 1.02rem; }
+    .meter-copy p { margin: 6px 0 0; color: var(--muted); font-size: .82rem; line-height: 1.55; }
+    .checklist { display: grid; gap: 8px; margin: 15px 0 0; padding: 0; list-style: none; }
+    .checklist li { display: flex; align-items: center; gap: 9px; color: #b9cbd6; font-size: .82rem; }
+    .check {
+      width: 18px; height: 18px; flex: none; display: grid; place-items: center; border: 1px solid rgba(156, 221, 242, .34); border-radius: 50%; color: #0f2a37; background: transparent; font-size: .72rem; font-weight: 900; transition: all .2s;
+    }
+    .check.done { border-color: var(--mint); background: var(--mint); }
+    .next-card { border-color: rgba(108, 226, 189, .36); background: linear-gradient(135deg, rgba(31, 101, 84, .28), rgba(10, 33, 46, .88)); }
+    .next-label { margin: 0 0 4px; color: var(--mint); font-size: .7rem; font-weight: 900; letter-spacing: .12em; }
+    #nextStep { margin: 0; font-size: 1.03rem; line-height: 1.43; letter-spacing: -.02em; }
+    .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .action-button { min-height: 82px; padding: 12px; text-align: left; }
+    .action-button strong { display: block; color: #fff; font-size: .9rem; }
+    .action-button span { display: block; margin-top: 5px; color: var(--muted); font-size: .71rem; line-height: 1.35; }
+    .action-button.done { border-color: rgba(108, 226, 189, .8); background: #1f6959; }
+    .action-button:disabled { cursor: default; opacity: .62; }
+    .action-button:disabled:hover { transform: none; }
+    .log { max-height: 178px; margin: 0; padding: 0; overflow: auto; list-style: none; }
+    .log li { padding: 10px 0; border-bottom: 1px solid rgba(156, 221, 242, .1); color: #b7c8d3; font-size: .79rem; line-height: 1.43; }
+    .log li:last-child { border-bottom: 0; }
+    .log time { margin-right: 7px; color: #6f96a9; font-variant-numeric: tabular-nums; }
+    .note { margin: 13px 0 0; color: #718c9c; font-size: .69rem; line-height: 1.5; }
+    .completion { display: none; margin-top: 12px; padding: 12px; border-radius: 11px; color: #d7fff0; background: rgba(108, 226, 189, .14); font-size: .81rem; line-height: 1.5; }
+    .completion.show { display: block; animation: appear .35s ease both; }
+    .status-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(1px,1px,1px,1px); white-space: nowrap; }
+    @keyframes appear { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 1000px) {
+      header { display: block; }
+      .dashboard { grid-template-columns: 1fr; }
+      .side { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .side > .panel:last-child { grid-column: span 2; }
+    }
+    @media (max-width: 640px) {
+      .shell { width: min(100% - 20px, 1400px); padding-top: 20px; }
+      .safety-callout { align-items: flex-start; }
+      .emergency-link { min-width: 50px; }
+      .toolbar { align-items: stretch; }
+      .toolbar-actions { justify-content: stretch; }
+      .toolbar-actions button { flex: 1; }
+      .scenario-picker { display: grid; grid-template-columns: 1fr; }
+      select { width: 100%; }
+      .scene-panel, canvas { min-height: 435px; }
+      .side { grid-template-columns: 1fr; }
+      .side > .panel:last-child { grid-column: auto; }
+      .meter { grid-template-columns: 98px 1fr; }
+      .gauge { width: 98px; }
+      .gauge::before { width: 78px; }
+      .scene-hud { flex-direction: column; align-items: flex-start; }
+      .score-chip { text-align: left; }
+      .action-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="eyebrow">VIRTUAL SAFETY LAB</div>
+    <header>
+      <div>
+        <h1>고소 위험<br>안전 대응 훈련실</h1>
+        <p class="subtitle">높은 곳에서의 위험을 줄이는 선택을 가상 장면에서 연습합니다. 목표는 낙하를 시험하는 것이 아니라, 위험 구역에서 벗어나 주변과 전문 인력에게 빠르게 연결하는 것입니다.</p>
+      </div>
+    </header>
+
+    <section class="safety-callout" aria-label="긴급 안전 안내">
+      <div><strong>실제 상황이라면:</strong> 화면으로 판단하지 말고 위험한 가장자리에서 멀어지고, 주변에 알린 뒤 즉시 119 또는 시설 관리자에게 도움을 요청하세요.</div>
+      <a class="emergency-link" href="tel:119" aria-label="119에 전화하기">119</a>
+    </section>
+
+    <section class="toolbar" aria-label="훈련 설정">
+      <div class="scenario-picker">
+        <label for="scenario">가상 장소</label>
+        <select id="scenario">
+          <option value="roof">도시 건물 옥상</option>
+          <option value="platform">공사장 작업 발판</option>
+          <option value="lookout">산책로 전망대</option>
+        </select>
+      </div>
+      <div class="toolbar-actions">
+        <button class="small-button primary" id="startButton">새 훈련 시작</button>
+        <button class="small-button" id="resetButton">처음부터</button>
+      </div>
+    </section>
+
+    <section class="dashboard" aria-label="가상 안전 훈련">
+      <article class="panel scene-panel" aria-label="가상 장면">
+        <canvas id="scene" aria-label="고소 위험 상황을 나타낸 가상 장면"></canvas>
+        <div class="scene-hud" aria-hidden="true">
+          <div class="scene-chip"><span id="sceneName">SCENARIO · 도시 건물 옥상</span><div id="sceneDescription">난간 가까이에 있는 사람을 발견했습니다.</div></div>
+          <div class="scene-chip score-chip"><span>학습용 안전 지표</span><b id="sceneScore">08</b> / 100</div>
+        </div>
+      </article>
+
+      <aside class="side">
+        <section class="panel card">
+          <h2 class="card-title">안전 상태 <span>LEARNING METER</span></h2>
+          <div class="meter">
+            <div class="gauge" id="gauge"><div class="gauge-value"><span id="score">08</span><small>/ 100</small></div></div>
+            <div class="meter-copy"><b id="meterTitle">안전 연결을 시작하세요</b><p id="meterText">위험 구역과 거리를 만들고, 혼자 해결하려 하지 않는 것이 첫 단계입니다.</p></div>
+          </div>
+          <ul class="checklist" aria-label="안전 행동 확인 목록">
+            <li><i class="check" id="checkDistance">✓</i><span>경계선에서 뒤로 이동</span></li>
+            <li><i class="check" id="checkEmergency">✓</i><span>119·관리자 연락 경로 확보</span></li>
+            <li><i class="check" id="checkHelper">✓</i><span>주변에 위험 상황 알림</span></li>
+            <li><i class="check" id="checkCordon">✓</i><span>위험 구역 접근 통제 요청</span></li>
+            <li><i class="check" id="checkHandoff">✓</i><span>전문 대응자에게 인계</span></li>
+          </ul>
+          <p class="note">점수는 안전 행동을 학습하기 위한 표시일 뿐, 실제 위험도나 결과를 예측하지 않습니다.</p>
+        </section>
+
+        <section class="panel card next-card">
+          <p class="next-label">다음의 가장 안전한 선택</p>
+          <p id="nextStep">경계선과 거리를 만드세요.</p>
+          <div class="completion" id="completion">안전 행동 연쇄를 완성했습니다. 실제 현장에서는 구조·안전 담당자의 안내를 따르세요.</div>
+        </section>
+
+        <section class="panel card">
+          <h2 class="card-title">행동 선택 <span>SAFE ACTIONS</span></h2>
+          <div class="action-grid">
+            <button class="action-button" id="moveButton"><strong>① 경계선에서 뒤로 이동</strong><span>가상 인물이 위험 구역과 거리를 만듭니다.</span></button>
+            <button class="action-button" id="callButton"><strong>② 도움 요청 연결</strong><span>119 및 현장 관리 연락을 우선합니다.</span></button>
+            <button class="action-button" id="alertButton"><strong>③ 주변에 알리기</strong><span>혼자 대응하지 않도록 주변 성인·관리자에게 알립니다.</span></button>
+            <button class="action-button" id="cordonButton"><strong>④ 접근 통제 요청</strong><span>다른 사람이 위험 구역에 들어가지 않도록 요청합니다.</span></button>
+            <button class="action-button" id="handoffButton" style="grid-column:span 2"><strong>⑤ 전문 대응자에게 인계</strong><span>안전한 위치에서 상황을 전달하고 안내를 따릅니다.</span></button>
+          </div>
+        </section>
+
+        <section class="panel card">
+          <h2 class="card-title">훈련 기록 <span>ACTIVITY LOG</span></h2>
+          <ul class="log" id="log"></ul>
+        </section>
+      </aside>
+    </section>
+    <p class="status-live" id="live" aria-live="polite"></p>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('scene');
+    const ctx = canvas.getContext('2d');
+    const scenarioSelect = document.getElementById('scenario');
+    const elements = {
+      score: document.getElementById('score'),
+      sceneScore: document.getElementById('sceneScore'),
+      gauge: document.getElementById('gauge'),
+      meterTitle: document.getElementById('meterTitle'),
+      meterText: document.getElementById('meterText'),
+      sceneName: document.getElementById('sceneName'),
+      sceneDescription: document.getElementById('sceneDescription'),
+      nextStep: document.getElementById('nextStep'),
+      log: document.getElementById('log'),
+      completion: document.getElementById('completion'),
+      live: document.getElementById('live'),
+      buttons: {
+        move: document.getElementById('moveButton'),
+        call: document.getElementById('callButton'),
+        alert: document.getElementById('alertButton'),
+        cordon: document.getElementById('cordonButton'),
+        handoff: document.getElementById('handoffButton')
+      },
+      checks: {
+        distance: document.getElementById('checkDistance'),
+        emergency: document.getElementById('checkEmergency'),
+        helper: document.getElementById('checkHelper'),
+        cordon: document.getElementById('checkCordon'),
+        handoff: document.getElementById('checkHandoff')
+      }
+    };
+
+    const scenarios = {
+      roof: { name: '도시 건물 옥상', description: '난간 가까이에 있는 사람을 발견했습니다.', sky: ['#0d4765', '#8ad0e5'], ground: '#44555a', edge: '#f2c85c', detail: 'CITY ROOFTOP' },
+      platform: { name: '공사장 작업 발판', description: '출입이 통제된 작업 구역 주변에 사람이 있습니다.', sky: ['#2c4965', '#9bb5c6'], ground: '#5e5b4f', edge: '#ffbb4e', detail: 'WORK PLATFORM' },
+      lookout: { name: '산책로 전망대', description: '전망대 경계 부근에서 도움이 필요한 상황입니다.', sky: ['#315d70', '#c7e4db'], ground: '#526455', edge: '#f6d26d', detail: 'LOOKOUT DECK' }
+    };
+
+    let state;
+    let width = 0;
+    let height = 0;
+    let dpr = 1;
+    let time = 0;
+    let dust = [];
+
+    function freshState() {
+      return {
+        scenario: scenarioSelect.value,
+        distance: 0,
+        emergency: false,
+        helper: false,
+        cordon: false,
+        handoff: false,
+        completed: false,
+        startedAt: new Date(),
+        log: [],
+        flash: 0
+      };
+    }
+
+    function stamp() {
+      return new Intl.DateTimeFormat('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }).format(new Date());
+    }
+
+    function addLog(message) {
+      state.log.unshift({ at: stamp(), message: message });
+      state.log = state.log.slice(0, 7);
+      renderUI();
+      elements.live.textContent = message;
+    }
+
+    function safeScore() {
+      let score = 8;
+      score += Math.min(state.distance, 2) * 15;
+      score += state.emergency ? 20 : 0;
+      score += state.helper ? 16 : 0;
+      score += state.cordon ? 16 : 0;
+      score += state.handoff ? 10 : 0;
+      return Math.min(100, score);
+    }
+
+    function getNextStep() {
+      if (state.distance < 2) return '먼저 위험 경계선에서 충분히 뒤로 이동하세요.';
+      if (!state.emergency) return '위험이 계속된다면 119와 시설 관리 연락 경로를 확보하세요.';
+      if (!state.helper) return '혼자 대응하지 말고 주변 성인이나 관리자에게 상황을 알리세요.';
+      if (!state.cordon) return '위험 구역에 다른 사람이 접근하지 않도록 통제를 요청하세요.';
+      if (!state.handoff) return '안전한 위치에서 전문 대응자에게 상황을 전달하고 안내를 따르세요.';
+      return '안전 행동 연쇄가 완성되었습니다. 현장 안내를 계속 따르세요.';
+    }
+
+    function meterCopy(score) {
+      if (state.completed) return ['안전 연결이 완료되었습니다', '가상 훈련을 마쳤습니다. 실제 상황에서는 전문 구조·안전 인력의 지시를 우선하세요.'];
+      if (score >= 65) return ['도움 체계가 연결되고 있습니다', '안전 거리를 유지한 채 남은 행동을 이어가세요.'];
+      if (score >= 35) return ['위험을 줄이는 중입니다', '거리 확보 뒤에는 주변과 전문 도움을 연결하는 것이 중요합니다.'];
+      return ['안전 연결을 시작하세요', '위험 구역과 거리를 만들고, 혼자 해결하려 하지 않는 것이 첫 단계입니다.'];
+    }
+
+    function setDone(element, done) {
+      element.classList.toggle('done', done);
+    }
+
+    function renderUI() {
+      const score = safeScore();
+      const copy = meterCopy(score);
+      elements.score.textContent = String(score).padStart(2, '0');
+      elements.sceneScore.textContent = String(score).padStart(2, '0');
+      elements.gauge.style.setProperty('--score', score);
+      elements.meterTitle.textContent = copy[0];
+      elements.meterText.textContent = copy[1];
+      elements.nextStep.textContent = getNextStep();
+      elements.completion.classList.toggle('show', state.completed);
+      elements.sceneName.textContent = 'SCENARIO · ' + scenarios[state.scenario].name;
+      elements.sceneDescription.textContent = scenarios[state.scenario].description;
+
+      setDone(elements.checks.distance, state.distance >= 2);
+      setDone(elements.checks.emergency, state.emergency);
+      setDone(elements.checks.helper, state.helper);
+      setDone(elements.checks.cordon, state.cordon);
+      setDone(elements.checks.handoff, state.handoff);
+
+      const actionState = {
+        move: state.distance >= 2,
+        call: state.emergency,
+        alert: state.helper,
+        cordon: state.cordon,
+        handoff: state.handoff
+      };
+      Object.keys(actionState).forEach(function(key) {
+        elements.buttons[key].classList.toggle('done', actionState[key]);
+        elements.buttons[key].disabled = actionState[key];
+      });
+
+      elements.log.innerHTML = state.log.map(function(entry) {
+        return '<li><time>' + entry.at + '</time>' + entry.message + '</li>';
+      }).join('');
+    }
+
+    function resetTraining(message) {
+      state = freshState();
+      dust = Array.from({ length: 58 }, function(_, index) {
+        return { x: (index * 87 % 1000) / 1000, y: (index * 43 % 1000) / 1000, r: 1 + index % 3, drift: .1 + (index % 5) * .04 };
+      });
+      addLog(message || '훈련을 시작했습니다. 가장자리에서 멀어지는 것부터 선택해 보세요.');
+      renderUI();
+    }
+
+    function pulse() {
+      state.flash = 1;
+    }
+
+    function actionMove() {
+      state.distance += 1;
+      pulse();
+      if (state.distance >= 2) addLog('가상 인물이 경계선에서 충분히 뒤로 이동했습니다.');
+      else addLog('한 단계 뒤로 이동했습니다. 안전 거리를 더 확보해 보세요.');
+    }
+
+    function actionCall() {
+      state.emergency = true;
+      pulse();
+      addLog('119 및 시설 관리 연락 경로를 확보했습니다.');
+    }
+
+    function actionAlert() {
+      state.helper = true;
+      pulse();
+      addLog('주변 성인·관리자에게 위험 상황을 알렸습니다.');
+    }
+
+    function actionCordon() {
+      state.cordon = true;
+      pulse();
+      addLog('위험 구역 접근 통제를 요청했습니다.');
+    }
+
+    function actionHandoff() {
+      if (state.distance < 2 || !state.emergency || !state.helper || !state.cordon) {
+        addLog('인계 전에는 안전 거리 확보와 도움 연결을 먼저 진행해 주세요.');
+        return;
+      }
+      state.handoff = true;
+      state.completed = true;
+      pulse();
+      addLog('전문 대응자에게 상황을 인계했습니다. 훈련이 완료되었습니다.');
+    }
+
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      width = rect.width;
+      height = rect.height;
+      canvas.width = Math.round(width * dpr);
+      canvas.height = Math.round(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    function roundedRect(x, y, w, h, r) {
+      const radius = Math.min(r, w / 2, h / 2);
+      ctx.beginPath();
+      ctx.moveTo(x + radius, y);
+      ctx.arcTo(x + w, y, x + w, y + h, radius);
+      ctx.arcTo(x + w, y + h, x, y + h, radius);
+      ctx.arcTo(x, y + h, x, y, radius);
+      ctx.arcTo(x, y, x + w, y, radius);
+      ctx.closePath();
+    }
+
+    function drawBuilding(x, y, w, h, color, glow) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, w, h);
+      ctx.fillStyle = glow;
+      for (let row = 10; row < h - 10; row += 16) {
+        for (let col = 9; col < w - 7; col += 15) {
+          if (((row + col + Math.floor(time * 4)) % 6) > 1) ctx.fillRect(x + col, y + row, 4, 6);
+        }
+      }
+    }
+
+    function drawEnvironment() {
+      const config = scenarios[state.scenario];
+      const sky = ctx.createLinearGradient(0, 0, 0, height);
+      sky.addColorStop(0, config.sky[0]);
+      sky.addColorStop(1, config.sky[1]);
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, width, height);
+
+      const sunX = width * .78;
+      const sunY = height * .18;
+      const sun = ctx.createRadialGradient(sunX, sunY, 5, sunX, sunY, height * .24);
+      sun.addColorStop(0, 'rgba(255,249,204,.8)');
+      sun.addColorStop(.26, 'rgba(255,239,160,.23)');
+      sun.addColorStop(1, 'rgba(255,230,140,0)');
+      ctx.fillStyle = sun;
+      ctx.fillRect(0, 0, width, height);
+
+      if (state.scenario === 'roof') {
+        for (let i = 0; i < 10; i++) {
+          const h = 70 + ((i * 47) % 110);
+          const x = i * width / 9 - 30;
+          drawBuilding(x, height * .42 - h, width / 10 + 20, h, i % 2 ? '#153b52' : '#1b4659', 'rgba(255,234,145,.45)');
+        }
+      } else if (state.scenario === 'platform') {
+        ctx.strokeStyle = 'rgba(40,51,55,.62)';
+        ctx.lineWidth = 10;
+        for (let i = -1; i < 6; i++) {
+          ctx.beginPath();
+          ctx.moveTo(i * 150, height * .52);
+          ctx.lineTo(i * 150 + 80, height * .12);
+          ctx.stroke();
+        }
+        ctx.fillStyle = 'rgba(25,46,52,.55)';
+        ctx.fillRect(0, height * .50, width, height * .13);
+      } else {
+        ctx.fillStyle = '#527258';
+        ctx.beginPath();
+        ctx.moveTo(0, height * .51);
+        for (let x = 0; x <= width; x += 40) ctx.lineTo(x, height * (.45 + .1 * Math.sin(x * .013)));
+        ctx.lineTo(width, height);
+        ctx.lineTo(0, height);
+        ctx.fill();
+        ctx.fillStyle = '#3b654e';
+        for (let i = 0; i < 17; i++) {
+          const x = (i * 83) % width;
+          const y = height * .42 + (i % 4) * 18;
+          ctx.beginPath();
+          ctx.arc(x, y, 18 + (i % 3) * 8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      dust.forEach(function(point) {
+        const x = (point.x * width + time * point.drift * 25) % (width + 20) - 10;
+        const y = point.y * height * .62 + 30;
+        ctx.fillStyle = 'rgba(238,252,255,.34)';
+        ctx.beginPath();
+        ctx.arc(x, y, point.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+
+    function drawDeck() {
+      const deckTop = height * .55;
+      const deckBottom = height * .97;
+      const left = width * .09;
+      const right = width * .91;
+      const config = scenarios[state.scenario];
+      const deck = ctx.createLinearGradient(0, deckTop, 0, deckBottom);
+      deck.addColorStop(0, config.ground);
+      deck.addColorStop(1, '#172d34');
+      ctx.fillStyle = deck;
+      ctx.beginPath();
+      ctx.moveTo(left, deckTop);
+      ctx.lineTo(right, deckTop);
+      ctx.lineTo(width, deckBottom);
+      ctx.lineTo(0, deckBottom);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.strokeStyle = 'rgba(217,240,245,.13)';
+      ctx.lineWidth = 1;
+      for (let y = deckTop + 40; y < deckBottom; y += 48) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+      for (let x = -100; x < width + 100; x += 75) {
+        ctx.beginPath();
+        ctx.moveTo(width / 2 + (x - width / 2) * .2, deckTop);
+        ctx.lineTo(x, deckBottom);
+        ctx.stroke();
+      }
+
+      ctx.strokeStyle = config.edge;
+      ctx.lineWidth = 5;
+      ctx.setLineDash([12, 8]);
+      ctx.beginPath();
+      ctx.moveTo(left, deckTop + 7);
+      ctx.lineTo(right, deckTop + 7);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(18,39,46,.76)';
+      roundedRect(width * .39, deckTop - 29, width * .22, 22, 6);
+      ctx.fill();
+      ctx.fillStyle = '#d9f3fb';
+      ctx.font = '700 10px system-ui';
+      ctx.textAlign = 'center';
+      ctx.fillText('위험 경계선 · 접근 금지', width / 2, deckTop - 14);
+      ctx.textAlign = 'left';
+
+      if (state.cordon) {
+        ctx.strokeStyle = '#ffd36b';
+        ctx.lineWidth = 4;
+        for (let x = left + 10; x < right; x += 68) {
+          ctx.fillStyle = '#f7a94c';
+          ctx.beginPath();
+          ctx.moveTo(x, deckTop + 19);
+          ctx.lineTo(x - 11, deckTop + 43);
+          ctx.lineTo(x + 11, deckTop + 43);
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.beginPath();
+        ctx.moveTo(left + 4, deckTop + 32);
+        ctx.lineTo(right - 4, deckTop + 32);
+        ctx.stroke();
+      }
+    }
+
+    function drawPerson(x, y, color, label) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.strokeStyle = '#10242c';
+      ctx.lineWidth = 6;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(0, 30);
+      ctx.lineTo(-10, 54);
+      ctx.moveTo(0, 30);
+      ctx.lineTo(12, 54);
+      ctx.moveTo(0, 12);
+      ctx.lineTo(-15, 26);
+      ctx.moveTo(0, 12);
+      ctx.lineTo(16, 24);
+      ctx.stroke();
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(0, 0, 12, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = color;
+      roundedRect(-10, 11, 20, 23, 7);
+      ctx.fill();
+      if (label) {
+        ctx.fillStyle = 'rgba(5,20,28,.84)';
+        roundedRect(-35, -38, 70, 20, 7);
+        ctx.fill();
+        ctx.fillStyle = '#eaf9ff';
+        ctx.font = '700 9px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, 0, -24);
+        ctx.textAlign = 'left';
+      }
+      ctx.restore();
+    }
+
+    function drawSignals(personX, personY) {
+      if (state.emergency) {
+        ctx.save();
+        ctx.translate(personX + 48, personY - 20);
+        ctx.strokeStyle = '#ffdddd';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, 16 + Math.sin(time * 5) * 2, -.8, .8);
+        ctx.stroke();
+        ctx.fillStyle = '#ff7070';
+        roundedRect(-18, 12, 38, 18, 6);
+        ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.font = '800 10px system-ui';
+        ctx.textAlign = 'center';
+        ctx.fillText('119', 1, 25);
+        ctx.textAlign = 'left';
+        ctx.restore();
+      }
+      if (state.helper) drawPerson(personX + 114, personY - 3, '#7bcbff', '관리자');
+      if (state.handoff) {
+        drawPerson(personX + 184, personY + 3, '#6ce2bd', '안전 담당');
+        ctx.strokeStyle = 'rgba(108,226,189,.8)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(personX + 22, personY + 10);
+        ctx.lineTo(personX + 161, personY + 10);
+        ctx.stroke();
+      }
+    }
+
+    function drawFrame() {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(227,247,255,.30)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(12, 12, width - 24, height - 24);
+      ctx.fillStyle = 'rgba(6,22,31,.72)';
+      roundedRect(24, height - 49, 196, 25, 7);
+      ctx.fill();
+      ctx.fillStyle = '#a3c0ce';
+      ctx.font = '700 10px system-ui';
+      ctx.fillText('SIMULATION ONLY · NOT REAL-WORLD GUIDANCE', 34, height - 33);
+      ctx.restore();
+    }
+
+    function drawScene() {
+      ctx.clearRect(0, 0, width, height);
+      drawEnvironment();
+      drawDeck();
+      const personX = width * .5;
+      const personY = height * (.66 + .12 * (2 - Math.min(state.distance, 2)));
+      const glow = ctx.createRadialGradient(personX, personY + 15, 4, personX, personY + 15, 92);
+      glow.addColorStop(0, 'rgba(108,226,189,.25)');
+      glow.addColorStop(1, 'rgba(108,226,189,0)');
+      ctx.fillStyle = glow;
+      ctx.fillRect(personX - 100, personY - 90, 200, 190);
+      drawPerson(personX, personY, '#ffd36b', state.distance >= 2 ? '안전 거리 확보' : '도움이 필요한 사람');
+      drawSignals(personX, personY);
+      if (state.flash > 0) {
+        ctx.fillStyle = 'rgba(108,226,189,' + (state.flash * .13) + ')';
+        ctx.fillRect(0, 0, width, height);
+        state.flash = Math.max(0, state.flash - .024);
+      }
+      drawFrame();
+    }
+
+    function animate(now) {
+      time = now / 1000;
+      drawScene();
+      requestAnimationFrame(animate);
+    }
+
+    document.getElementById('startButton').addEventListener('click', function() {
+      resetTraining('새 훈련을 시작했습니다. 먼저 위험 경계선에서 멀어져 보세요.');
+    });
+    document.getElementById('resetButton').addEventListener('click', function() {
+      resetTraining('훈련을 처음 상태로 되돌렸습니다.');
+    });
+    scenarioSelect.addEventListener('change', function() {
+      resetTraining(scenarios[scenarioSelect.value].name + ' 시나리오로 바꿨습니다.');
+    });
+    elements.buttons.move.addEventListener('click', actionMove);
+    elements.buttons.call.addEventListener('click', actionCall);
+    elements.buttons.alert.addEventListener('click', actionAlert);
+    elements.buttons.cordon.addEventListener('click', actionCordon);
+    elements.buttons.handoff.addEventListener('click', actionHandoff);
+    window.addEventListener('resize', resize);
+
+    resize();
+    resetTraining();
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
