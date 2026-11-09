@@ -88,7 +88,7 @@
     .meter { display: grid; grid-template-columns: 118px 1fr; gap: 16px; align-items: center; }
     .gauge {
       --score: 8; width: 118px; aspect-ratio: 1; display: grid; place-items: center; border-radius: 50%;
-      background: conic-gradient(var(--mint) calc(var(--score) * 1%), rgba(156, 221, 242, .12) 0);
+      position: relative; overflow: hidden; background: conic-gradient(var(--mint) calc(var(--score) * 1%), rgba(156, 221, 242, .12) 0);
       transition: background .45s ease;
     }
     .gauge::before { position: absolute; width: 94px; aspect-ratio: 1; border-radius: 50%; background: #102a3a; content: ""; }
@@ -110,6 +110,7 @@
     .action-button strong { display: block; color: #fff; font-size: .9rem; }
     .action-button span { display: block; margin-top: 5px; color: var(--muted); font-size: .71rem; line-height: 1.35; }
     .action-button.done { border-color: rgba(108, 226, 189, .8); background: #1f6959; }
+    .action-button.full { grid-column: span 2; }
     .action-button:disabled { cursor: default; opacity: .62; }
     .action-button:disabled:hover { transform: none; }
     .log { max-height: 178px; margin: 0; padding: 0; overflow: auto; list-style: none; }
@@ -145,6 +146,7 @@
       .scene-hud { flex-direction: column; align-items: flex-start; }
       .score-chip { text-align: left; }
       .action-grid { grid-template-columns: 1fr; }
+      .action-button.full { grid-column: auto; }
     }
   </style>
 </head>
@@ -217,7 +219,7 @@
             <button class="action-button" id="callButton"><strong>② 도움 요청 연결</strong><span>119 및 현장 관리 연락을 우선합니다.</span></button>
             <button class="action-button" id="alertButton"><strong>③ 주변에 알리기</strong><span>혼자 대응하지 않도록 주변 성인·관리자에게 알립니다.</span></button>
             <button class="action-button" id="cordonButton"><strong>④ 접근 통제 요청</strong><span>다른 사람이 위험 구역에 들어가지 않도록 요청합니다.</span></button>
-            <button class="action-button" id="handoffButton" style="grid-column:span 2"><strong>⑤ 전문 대응자에게 인계</strong><span>안전한 위치에서 상황을 전달하고 안내를 따릅니다.</span></button>
+            <button class="action-button full" id="handoffButton"><strong>⑤ 전문 대응자에게 인계</strong><span>안전한 위치에서 상황을 전달하고 안내를 따릅니다.</span></button>
           </div>
         </section>
 
