@@ -1,0 +1,601 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#081c24" />
+  <title>페트병 추진 연구실 · 안전 가상 실험</title>
+  <style>
+    :root {
+      --ink: #eef8fb;
+      --muted: #a7c0c8;
+      --surface: rgba(15, 47, 59, .78);
+      --surface-strong: #113844;
+      --line: rgba(196, 235, 241, .16);
+      --aqua: #63e6d4;
+      --sky: #7fc8ff;
+      --yellow: #ffd272;
+      --danger: #ff8c86;
+      --shadow: 0 18px 45px rgba(0, 9, 13, .26);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at 10% -10%, rgba(70, 224, 211, .20), transparent 32rem),
+        radial-gradient(circle at 92% 2%, rgba(65, 138, 196, .23), transparent 27rem),
+        #07161d;
+      font-family: Pretendard, "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.48;
+    }
+
+    button, select, input { font: inherit; }
+    button { cursor: pointer; }
+
+    .shell { max-width: 1500px; margin: 0 auto; padding: 24px clamp(16px, 3vw, 48px) 44px; }
+    .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 6px 0 28px; }
+    .eyebrow { margin: 0 0 6px; color: var(--aqua); font-size: .76rem; font-weight: 800; letter-spacing: .12em; }
+    h1 { margin: 0; font-size: clamp(1.65rem, 4vw, 2.65rem); line-height: 1.12; letter-spacing: -.055em; }
+    .subtitle { margin: 11px 0 0; max-width: 720px; color: var(--muted); font-size: clamp(.93rem, 1.6vw, 1.04rem); }
+    .safety-chip { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 10px 13px; border: 1px solid rgba(99, 230, 212, .32); border-radius: 999px; color: #c8fff8; background: rgba(13, 74, 76, .42); font-size: .82rem; font-weight: 750; }
+    .safety-chip::before { content: "✓"; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; color: #063b3b; background: var(--aqua); font-size: .73rem; }
+
+    .notice { display: grid; grid-template-columns: auto 1fr; gap: 13px; align-items: center; margin-bottom: 20px; padding: 15px 17px; border: 1px solid rgba(255, 210, 114, .34); border-radius: 16px; color: #f8e7bd; background: rgba(107, 73, 17, .18); }
+    .notice-icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: #321e00; background: var(--yellow); font-weight: 950; }
+    .notice strong { color: #ffe1a1; }
+    .notice p { margin: 0; font-size: .9rem; }
+
+    .lab-grid { display: grid; grid-template-columns: minmax(258px, .84fr) minmax(0, 1.9fr) minmax(252px, .8fr); gap: 18px; align-items: start; }
+    .card { border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(145deg, rgba(20, 60, 72, .86), rgba(9, 32, 42, .84)); box-shadow: var(--shadow); }
+    .panel { padding: 20px; }
+    .panel h2, .card-title { margin: 0; font-size: 1rem; letter-spacing: -.025em; }
+    .panel-intro { margin: 7px 0 19px; color: var(--muted); font-size: .82rem; }
+    .form-group { margin-top: 16px; }
+    .form-label { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; color: #dff0f4; font-size: .84rem; font-weight: 700; }
+    .value-pill { min-width: 46px; padding: 2px 8px; border-radius: 999px; color: #a8fff4; background: rgba(84, 216, 203, .13); text-align: center; font-size: .73rem; font-variant-numeric: tabular-nums; }
+    select, .field-input { width: 100%; border: 1px solid rgba(210, 240, 245, .17); border-radius: 11px; outline: none; color: var(--ink); background: rgba(3, 21, 28, .56); padding: 10px 11px; transition: border-color .16s ease, box-shadow .16s ease; }
+    select:focus, .field-input:focus { border-color: var(--aqua); box-shadow: 0 0 0 3px rgba(99, 230, 212, .13); }
+    input[type="range"] { width: 100%; height: 6px; margin: 6px 0 0; appearance: none; border-radius: 999px; background: linear-gradient(90deg, var(--aqua) var(--fill, 50%), rgba(216, 245, 249, .15) var(--fill, 50%)); }
+    input[type="range"]::-webkit-slider-thumb { width: 17px; height: 17px; appearance: none; border: 3px solid #eaffff; border-radius: 50%; background: var(--sky); box-shadow: 0 2px 7px rgba(0,0,0,.35); }
+    input[type="range"]::-moz-range-thumb { width: 13px; height: 13px; border: 3px solid #eaffff; border-radius: 50%; background: var(--sky); box-shadow: 0 2px 7px rgba(0,0,0,.35); }
+    .range-hints { display: flex; justify-content: space-between; margin-top: 4px; color: #829da6; font-size: .7rem; }
+    .button-row { display: grid; grid-template-columns: 1fr; gap: 9px; margin-top: 23px; }
+    .button { border: 0; border-radius: 12px; padding: 12px 14px; font-weight: 850; transition: transform .15s ease, filter .15s ease, background .15s ease; }
+    .button:hover { transform: translateY(-1px); filter: brightness(1.07); }
+    .button:active { transform: translateY(0); }
+    .primary { color: #04211f; background: linear-gradient(115deg, var(--aqua), #78d9ff); }
+    .secondary { color: #ccf3f2; border: 1px solid rgba(159, 237, 232, .27); background: rgba(42, 124, 125, .19); }
+    .small-button { padding: 8px 10px; border: 1px solid rgba(175, 226, 235, .22); border-radius: 9px; color: #d8f5f4; background: rgba(4, 28, 36, .55); font-size: .74rem; font-weight: 750; }
+    .small-button:hover { border-color: var(--aqua); }
+
+    .stage { overflow: hidden; min-height: 660px; position: relative; }
+    .stage-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 22px 0; }
+    .virtual-label { padding: 5px 9px; border: 1px solid rgba(127, 200, 255, .27); border-radius: 999px; color: #b9e5ff; background: rgba(45, 127, 175, .16); font-size: .69rem; font-weight: 800; letter-spacing: .04em; }
+    .canvas-wrap { position: relative; height: 358px; margin: 15px 16px 0; overflow: hidden; border: 1px solid rgba(190, 233, 239, .12); border-radius: 16px; background: linear-gradient(180deg, #123e50 0%, #1f7184 64%, #205f57 64%, #17463e 100%); }
+    #flightCanvas { display: block; width: 100%; height: 100%; }
+    .canvas-note { position: absolute; top: 12px; left: 14px; max-width: 235px; color: rgba(239, 255, 255, .78); font-size: .72rem; line-height: 1.38; pointer-events: none; }
+    .status-banner { display: flex; align-items: center; gap: 9px; margin: 12px 18px 0; padding: 11px 13px; border: 1px solid rgba(99, 230, 212, .18); border-radius: 12px; color: #cef8f4; background: rgba(10, 55, 64, .6); font-size: .82rem; }
+    .status-dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; background: var(--aqua); box-shadow: 0 0 12px var(--aqua); }
+    .results { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 16px 18px 0; }
+    .metric { padding: 13px 12px; border: 1px solid rgba(197, 235, 241, .12); border-radius: 14px; background: rgba(5, 30, 38, .52); }
+    .metric-label { display: block; min-height: 2.6em; color: var(--muted); font-size: .72rem; line-height: 1.25; }
+    .metric-value { display: flex; align-items: baseline; gap: 3px; margin-top: 5px; color: #f5ffff; font-size: clamp(1.25rem, 2.4vw, 1.75rem); font-weight: 850; font-variant-numeric: tabular-nums; letter-spacing: -.045em; }
+    .metric-unit { color: #9dbdc4; font-size: .63rem; font-weight: 750; letter-spacing: 0; }
+    .metric-bar { height: 4px; overflow: hidden; margin-top: 9px; border-radius: 999px; background: rgba(185, 236, 242, .12); }
+    .metric-bar i { display: block; height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, var(--aqua), var(--sky)); transition: width .42s ease; }
+    .insight { margin: 16px 18px 20px; padding: 15px; border-left: 3px solid var(--yellow); border-radius: 0 13px 13px 0; color: #ecfaff; background: rgba(77, 66, 26, .19); font-size: .86rem; }
+    .insight strong { color: #ffe1a2; }
+
+    .method-list { display: grid; gap: 9px; margin-top: 16px; }
+    .method-card { padding: 11px; border: 1px solid transparent; border-radius: 13px; background: rgba(4, 27, 35, .43); }
+    .method-card.active { border-color: rgba(99, 230, 212, .40); background: rgba(49, 149, 143, .12); }
+    .method-name { display: flex; justify-content: space-between; gap: 8px; color: #eaffff; font-size: .83rem; font-weight: 800; }
+    .method-tag { color: var(--aqua); font-size: .68rem; white-space: nowrap; }
+    .method-desc { margin: 5px 0 0; color: var(--muted); font-size: .72rem; line-height: 1.43; }
+    .log-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 22px; }
+    .log-count { color: var(--muted); font-size: .73rem; }
+    .log-list { display: grid; gap: 8px; max-height: 195px; margin-top: 10px; overflow: auto; padding-right: 2px; }
+    .log-empty { padding: 14px; border: 1px dashed rgba(174, 221, 228, .20); border-radius: 12px; color: #91abb3; font-size: .76rem; text-align: center; }
+    .log-item { padding: 10px; border: 1px solid rgba(184, 227, 233, .1); border-radius: 11px; background: rgba(5, 27, 34, .55); }
+    .log-item-top { display: flex; justify-content: space-between; gap: 8px; color: #e6fbfd; font-size: .74rem; font-weight: 800; }
+    .log-meta { margin-top: 4px; color: var(--muted); font-size: .68rem; }
+    .log-item button { float: right; margin: 4px 0 0 5px; border: 0; color: #91aeb6; background: transparent; font-size: .68rem; }
+    .log-item button:hover { color: var(--danger); }
+
+    .research { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(290px, .9fr); gap: 18px; margin-top: 18px; }
+    .research .panel { padding: 21px; }
+    .steps { display: grid; gap: 12px; margin: 16px 0 0; padding: 0; list-style: none; counter-reset: research; }
+    .steps li { position: relative; padding-left: 43px; color: #d7edf0; font-size: .85rem; }
+    .steps li::before { counter-increment: research; content: counter(research); position: absolute; left: 0; top: -1px; display: grid; place-items: center; width: 28px; height: 28px; border: 1px solid rgba(99, 230, 212, .4); border-radius: 50%; color: var(--aqua); background: rgba(44, 160, 153, .12); font-size: .75rem; font-weight: 900; }
+    .steps small { display: block; margin-top: 3px; color: var(--muted); font-size: .75rem; }
+    .safety-list { display: grid; gap: 10px; margin: 16px 0 0; padding: 0; list-style: none; }
+    .safety-list li { padding: 11px 12px 11px 38px; position: relative; border-radius: 11px; color: #d7ecf0; background: rgba(3, 25, 32, .45); font-size: .8rem; }
+    .safety-list li::before { content: "✓"; position: absolute; left: 13px; top: 10px; color: var(--aqua); font-weight: 950; }
+    footer { margin-top: 20px; color: #91aab2; font-size: .75rem; text-align: center; }
+    footer strong { color: #c5e6e9; }
+
+    @media (max-width: 1120px) {
+      .lab-grid { grid-template-columns: minmax(250px, .85fr) minmax(0, 1.7fr); }
+      .log-panel { grid-column: 1 / -1; }
+      .log-panel .method-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .log-panel .method-desc { display: none; }
+      .log-panel .log-list { max-height: 145px; }
+    }
+    @media (max-width: 760px) {
+      .shell { padding-top: 16px; }
+      .topbar { flex-direction: column; padding-bottom: 19px; }
+      .safety-chip { align-self: flex-start; }
+      .lab-grid, .research { grid-template-columns: 1fr; }
+      .log-panel { grid-column: auto; }
+      .log-panel .method-list { grid-template-columns: 1fr 1fr; }
+      .canvas-wrap { height: 310px; }
+      .results { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .stage { min-height: unset; }
+      .notice { align-items: start; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">VIRTUAL SAFETY LAB · PET BOTTLE MOTION</p>
+        <h1>페트병 추진 연구실</h1>
+        <p class="subtitle">화약·연료 없이 움직이는 원리를 <strong>가상으로만</strong> 비교하고, 안전한 실험 설계를 기록하는 연구 노트입니다.</p>
+      </div>
+      <div class="safety-chip">교육용 가상 실험</div>
+    </header>
+
+    <section class="notice" aria-label="안전 안내">
+      <div class="notice-icon">!</div>
+      <p><strong>실제 발사용 설계도가 아닙니다.</strong> 이 도구는 고압 수치, 부품 조합, 발사 장치 제작법을 제공하지 않습니다. 실제 활동은 학교·보호자 감독, 제조사 안전 기준, 넓고 비어 있는 장소에서만 검토하세요.</p>
+    </section>
+
+    <section class="lab-grid" aria-label="가상 추진 연구 도구">
+      <aside class="card panel" aria-labelledby="control-title">
+        <h2 id="control-title">가상 실험 조건</h2>
+        <p class="panel-intro">수치는 실제 설정값이 아닌, 앱 안에서만 쓰이는 상대 지표입니다.</p>
+
+        <div class="form-group">
+          <label class="form-label" for="method">움직임 방식</label>
+          <select id="method">
+            <option value="elastic">탄성 에너지 · 고무줄 모형</option>
+            <option value="spring">스프링 에너지 · 모형 장치</option>
+            <option value="waterAir">물·공기 · 교육용 키트</option>
+            <option value="ramp">중력 경사로 · 비행 없음</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="energy">가상 에너지 단계 <span class="value-pill" id="energyValue">3 / 5</span></label>
+          <input id="energy" type="range" min="1" max="5" step="1" value="3" />
+          <div class="range-hints"><span>낮음</span><span>중간</span><span>높음</span></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="mass">페트병 상대 무게 <span class="value-pill" id="massValue">표준</span></label>
+          <input id="mass" type="range" min="1" max="5" step="1" value="3" />
+          <div class="range-hints"><span>가벼움</span><span>표준</span><span>무거움</span></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="angle">가상 출발 각도 <span class="value-pill" id="angleValue">45°</span></label>
+          <input id="angle" type="range" min="15" max="70" step="1" value="45" />
+          <div class="range-hints"><span>15°</span><span>45°</span><span>70°</span></div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="wind">가상 바람 <span class="value-pill" id="windValue">없음</span></label>
+          <input id="wind" type="range" min="0" max="4" step="1" value="0" />
+          <div class="range-hints"><span>없음</span><span>약함</span><span>강함</span></div>
+        </div>
+
+        <div class="button-row">
+          <button class="button primary" id="simulate" type="button">가상 비행 실행</button>
+          <button class="button secondary" id="reset" type="button">안전 기본값으로 되돌리기</button>
+        </div>
+      </aside>
+
+      <section class="card stage" aria-labelledby="flight-title">
+        <div class="stage-header">
+          <h2 class="card-title" id="flight-title">가상 시험장</h2>
+          <span class="virtual-label">SIMULATION ONLY</span>
+        </div>
+        <div class="canvas-wrap">
+          <canvas id="flightCanvas" aria-label="가상 페트병 비행 궤적"></canvas>
+          <div class="canvas-note">상대 지표를 시각화한 궤적입니다.<br>실제 거리·속도·안전 기준으로 사용하지 마세요.</div>
+        </div>
+        <div class="status-banner" id="statusText" role="status"><span class="status-dot"></span><span>조건을 정한 뒤 가상 비행을 실행해 보세요.</span></div>
+        <div class="results" aria-label="가상 결과">
+          <article class="metric"><span class="metric-label">비행 거리 지수</span><span class="metric-value" id="rangeMetric">— <small class="metric-unit">/ 100</small></span><div class="metric-bar"><i id="rangeBar"></i></div></article>
+          <article class="metric"><span class="metric-label">안정성 지수</span><span class="metric-value" id="stabilityMetric">— <small class="metric-unit">/ 100</small></span><div class="metric-bar"><i id="stabilityBar"></i></div></article>
+          <article class="metric"><span class="metric-label">안전 검토 지수</span><span class="metric-value" id="safetyMetric">— <small class="metric-unit">/ 100</small></span><div class="metric-bar"><i id="safetyBar"></i></div></article>
+          <article class="metric"><span class="metric-label">재현성 지수</span><span class="metric-value" id="repeatMetric">— <small class="metric-unit">/ 100</small></span><div class="metric-bar"><i id="repeatBar"></i></div></article>
+        </div>
+        <p class="insight" id="insight"><strong>연구 팁:</strong> 한 번에 하나의 조건만 바꾸고 기록하면, 어떤 조건이 결과에 영향을 주었는지 더 공정하게 비교할 수 있습니다.</p>
+      </section>
+
+      <aside class="card panel log-panel" aria-labelledby="log-title">
+        <h2 id="log-title">방식 비교 · 연구 기록</h2>
+        <div class="method-list" id="methodList" aria-label="움직임 방식 비교"></div>
+
+        <div class="log-head">
+          <span class="card-title">내 가상 실험 노트</span>
+          <span class="log-count" id="logCount">0개 기록</span>
+        </div>
+        <div class="form-group" style="margin-top:10px">
+          <input class="field-input" id="experimentName" maxlength="34" placeholder="예: 탄성 모형 1차 비교" aria-label="실험 이름" />
+        </div>
+        <div class="button-row" style="margin-top:10px">
+          <button class="small-button" id="saveLog" type="button">현재 결과 기록하기</button>
+          <button class="small-button" id="exportLog" type="button">CSV로 내보내기</button>
+        </div>
+        <div class="log-list" id="logList"></div>
+      </aside>
+    </section>
+
+    <section class="research" aria-label="연구 방법과 안전 기준">
+      <article class="card panel">
+        <h2>안전한 탐구 흐름</h2>
+        <ol class="steps">
+          <li><strong>질문 하나를 정합니다.</strong><small>예: “가상 무게가 안정성 지수에 어떤 영향을 줄까?”</small></li>
+          <li><strong>비교할 조건 하나만 바꿉니다.</strong><small>나머지 조건은 고정하여 결과를 비교합니다.</small></li>
+          <li><strong>가상 결과를 기록합니다.</strong><small>거리뿐 아니라 안정성·재현성·안전 검토 지수도 함께 봅니다.</small></li>
+          <li><strong>현실 활동은 별도 안전 검토 후 결정합니다.</strong><small>이 앱의 지표를 실제 설계값이나 실행 지침으로 바꾸지 않습니다.</small></li>
+        </ol>
+      </article>
+      <article class="card panel">
+        <h2>실제 활동 전 최소 안전 기준</h2>
+        <ul class="safety-list">
+          <li>사람·동물·차량·유리 방향으로 절대 향하지 않기</li>
+          <li>보호자 또는 교사의 직접 감독과 공식 교육용 장비 사용</li>
+          <li>손상되었거나 변형된 페트병은 사용하지 않기</li>
+          <li>불꽃, 화학 반응, 임의의 고압 장치와 결합하지 않기</li>
+          <li>제조사 지침과 장소 규칙을 벗어난 실제 실험은 중단하기</li>
+        </ul>
+      </article>
+    </section>
+
+    <footer><strong>페트병 추진 연구실</strong>은 과학 원리와 안전한 실험 설계를 배우기 위한 가상 도구입니다. 모든 수치는 앱 내부의 상대 모델입니다.</footer>
+  </main>
+
+  <script>
+    (() => {
+      const methods = {
+        elastic: {
+          name: "탄성 에너지", tag: "저에너지", color: "#63e6d4", gain: .82, stability: 82, safety: 95, repeat: 71,
+          desc: "고무줄 등 탄성 원리를 가상으로 비교합니다. 실제 제작법은 제공하지 않습니다."
+        },
+        spring: {
+          name: "스프링 에너지", tag: "저에너지", color: "#7fc8ff", gain: .94, stability: 78, safety: 88, repeat: 83,
+          desc: "스프링의 저장 에너지를 상대 지표로 모델링합니다. 반동 위험은 별도 검토가 필요합니다."
+        },
+        waterAir: {
+          name: "물·공기", tag: "감독 필요", color: "#ffd272", gain: 1.08, stability: 68, safety: 71, repeat: 75,
+          desc: "공식 교육용 키트의 원리를 가상으로만 표현합니다. 압력·부품·제작 정보는 다루지 않습니다."
+        },
+        ramp: {
+          name: "중력 경사로", tag: "비행 없음", color: "#ce9dff", gain: .53, stability: 95, safety: 99, repeat: 93,
+          desc: "공중 발사 대신 경사면을 따라 움직이는 관찰 방식입니다. 가장 낮은 위험의 비교 기준입니다."
+        }
+      };
+
+      const controls = {
+        method: document.querySelector("#method"),
+        energy: document.querySelector("#energy"),
+        mass: document.querySelector("#mass"),
+        angle: document.querySelector("#angle"),
+        wind: document.querySelector("#wind")
+      };
+      const labels = {
+        energy: document.querySelector("#energyValue"), mass: document.querySelector("#massValue"),
+        angle: document.querySelector("#angleValue"), wind: document.querySelector("#windValue")
+      };
+      const canvas = document.querySelector("#flightCanvas");
+      const ctx = canvas.getContext("2d");
+      const statusText = document.querySelector("#statusText span:last-child");
+      const insight = document.querySelector("#insight");
+      const metrics = {
+        range: [document.querySelector("#rangeMetric"), document.querySelector("#rangeBar")],
+        stability: [document.querySelector("#stabilityMetric"), document.querySelector("#stabilityBar")],
+        safety: [document.querySelector("#safetyMetric"), document.querySelector("#safetyBar")],
+        repeat: [document.querySelector("#repeatMetric"), document.querySelector("#repeatBar")]
+      };
+      const methodList = document.querySelector("#methodList");
+      const logList = document.querySelector("#logList");
+      const logCount = document.querySelector("#logCount");
+      const experimentName = document.querySelector("#experimentName");
+      const storageKey = "petBottleSafetyLabRecordsV1";
+      let currentResult = null;
+      let flightAnimation = null;
+      let lastFlight = { progress: 0, result: null };
+
+      const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+      const round = value => Math.round(value);
+      const massNames = ["가벼움", "조금 가벼움", "표준", "조금 무거움", "무거움"];
+      const windNames = ["없음", "미약", "약함", "보통", "강함"];
+      const safeParse = value => { try { return JSON.parse(value) || []; } catch { return []; } };
+      let records = safeParse(localStorage.getItem(storageKey));
+
+      function setRangeVisual(input) {
+        const percent = ((Number(input.value) - Number(input.min)) / (Number(input.max) - Number(input.min))) * 100;
+        input.style.setProperty("--fill", `${percent}%`);
+      }
+
+      function syncControls() {
+        labels.energy.textContent = `${controls.energy.value} / 5`;
+        labels.mass.textContent = massNames[Number(controls.mass.value) - 1];
+        labels.angle.textContent = `${controls.angle.value}°`;
+        labels.wind.textContent = windNames[Number(controls.wind.value)];
+        Object.values(controls).forEach(input => { if (input.type === "range") setRangeVisual(input); });
+        renderMethods();
+      }
+
+      function readConditions() {
+        return {
+          method: controls.method.value,
+          energy: Number(controls.energy.value),
+          mass: Number(controls.mass.value),
+          angle: Number(controls.angle.value),
+          wind: Number(controls.wind.value)
+        };
+      }
+
+      function calculate(conditions = readConditions()) {
+        const method = methods[conditions.method];
+        const angleFactor = Math.sin((conditions.angle * 2 * Math.PI) / 180);
+        const massFactor = 1 - (conditions.mass - 3) * .075;
+        const windPenalty = conditions.wind * 4.5;
+        const virtualPower = conditions.energy * method.gain;
+        const range = clamp(round(16 + virtualPower * 17 * angleFactor * massFactor - windPenalty), 3, 99);
+        const stability = clamp(round(method.stability - Math.abs(conditions.angle - 45) * .46 - conditions.wind * 3 + (conditions.mass === 3 ? 3 : 0)), 8, 99);
+        const safety = clamp(round(method.safety - (conditions.energy - 1) * 5.5 - conditions.wind * 2 - (conditions.method === "ramp" ? 0 : Math.max(0, conditions.angle - 55) * .22)), 45, 99);
+        const repeat = clamp(round(method.repeat - conditions.wind * 4 - Math.abs(conditions.mass - 3) * 3 + (conditions.energy === 3 ? 3 : 0)), 15, 99);
+        const duration = clamp(.9 + virtualPower * .30 + angleFactor * .65, .8, 3.3);
+        const height = clamp(23 + virtualPower * 7 * Math.sin((conditions.angle * Math.PI) / 180), 12, 80);
+        return { ...conditions, methodInfo: method, range, stability, safety, repeat, duration, height };
+      }
+
+      function metricValue(element, value) {
+        element.innerHTML = `${value}<small class="metric-unit">/ 100</small>`;
+      }
+
+      function renderResult(result) {
+        metricValue(metrics.range[0], result.range);
+        metricValue(metrics.stability[0], result.stability);
+        metricValue(metrics.safety[0], result.safety);
+        metricValue(metrics.repeat[0], result.repeat);
+        [[metrics.range[1], result.range], [metrics.stability[1], result.stability], [metrics.safety[1], result.safety], [metrics.repeat[1], result.repeat]].forEach(([bar, value]) => { bar.style.width = `${value}%`; });
+        const issue = result.safety < 70 ? "안전 검토 지수가 낮습니다. 실제 활동으로 바꾸지 말고, 가상 기록으로만 비교하세요." :
+          result.stability < 60 ? "안정성 지수가 낮습니다. 결과를 ‘거리’보다 안전한 관찰 항목 중심으로 해석해 보세요." :
+          result.wind > 2 ? "가상 바람의 영향이 큽니다. 한 조건만 바꾸는 비교 실험에서는 바람을 고정하는 편이 좋습니다." :
+          "조건이 비교적 균형적입니다. 다음 실험에서는 한 가지 변수만 바꾸어 재현성을 확인해 보세요.";
+        insight.innerHTML = `<strong>이번 가상 결과:</strong> ${issue}`;
+      }
+
+      function renderMethods() {
+        const selected = controls.method.value;
+        methodList.innerHTML = Object.entries(methods).map(([key, item]) => `
+          <article class="method-card ${key === selected ? "active" : ""}">
+            <div class="method-name"><span>${item.name}</span><span class="method-tag">${item.tag}</span></div>
+            <p class="method-desc">${item.desc}</p>
+          </article>`).join("");
+      }
+
+      function resizeCanvas() {
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const rect = canvas.getBoundingClientRect();
+        const width = Math.max(1, Math.floor(rect.width * dpr));
+        const height = Math.max(1, Math.floor(rect.height * dpr));
+        if (canvas.width !== width || canvas.height !== height) {
+          canvas.width = width;
+          canvas.height = height;
+        }
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        drawScene(lastFlight.progress, lastFlight.result);
+      }
+
+      function drawBottle(x, y, rotation, color) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotation);
+        ctx.shadowColor = "rgba(0, 0, 0, .32)";
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = "rgba(229, 255, 252, .86)";
+        ctx.beginPath();
+        ctx.roundRect(-18, -8, 28, 16, 5);
+        ctx.fill();
+        ctx.fillStyle = color;
+        ctx.fillRect(-11, -7, 12, 14);
+        ctx.fillStyle = "#0b2a33";
+        ctx.fillRect(10, -4, 6, 8);
+        ctx.fillStyle = "rgba(255,255,255,.72)";
+        ctx.fillRect(-15, -5, 3, 10);
+        ctx.restore();
+      }
+
+      function drawScene(progress = 0, result = null) {
+        const rect = canvas.getBoundingClientRect();
+        const width = rect.width;
+        const height = rect.height;
+        if (!width || !height) return;
+        ctx.clearRect(0, 0, width, height);
+
+        const ground = height * .72;
+        const gridColor = "rgba(223, 252, 255, .12)";
+        ctx.strokeStyle = gridColor;
+        ctx.lineWidth = 1;
+        for (let x = 24; x < width; x += 42) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, ground); ctx.stroke(); }
+        for (let y = 22; y < ground; y += 36) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); }
+        ctx.fillStyle = "rgba(255,255,255,.18)";
+        ctx.beginPath();
+        ctx.arc(width * .86, 43, 19, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(222, 255, 238, .35)";
+        ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(0, ground); ctx.lineTo(width, ground); ctx.stroke();
+
+        const startX = Math.max(60, width * .12);
+        ctx.fillStyle = "#0a2d32";
+        ctx.fillRect(startX - 18, ground - 9, 54, 9);
+        ctx.fillStyle = "#1d6b69";
+        ctx.fillRect(startX - 9, ground - 25, 22, 16);
+        ctx.fillStyle = "rgba(225, 255, 249, .7)";
+        ctx.font = "11px system-ui, sans-serif";
+        ctx.fillText("가상 시작선", startX - 17, ground + 21);
+
+        if (!result) {
+          drawBottle(startX + 8, ground - 38, -.22, "#63e6d4");
+          return;
+        }
+        const rangePx = Math.min(width * .76, 92 + (result.range / 100) * width * .72);
+        const angleRad = (result.angle * Math.PI) / 180;
+        const maxHeight = Math.min(height * .58, 48 + (result.height / 100) * height * .9);
+        const currentX = startX + rangePx * progress;
+        const arc = 4 * progress * (1 - progress);
+        let currentY;
+        if (result.method === "ramp") currentY = ground - 24 + progress * 18;
+        else currentY = ground - 38 - arc * maxHeight;
+        const derivative = result.method === "ramp" ? .14 : -4 * maxHeight * (1 - 2 * progress) / rangePx;
+        const rotation = Math.atan2(derivative * rangePx, 1) + (result.method === "ramp" ? .15 : 0);
+
+        ctx.save();
+        ctx.setLineDash([5, 6]);
+        ctx.strokeStyle = `${result.methodInfo.color}88`;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (let t = 0; t <= 1; t += .025) {
+          const px = startX + rangePx * t;
+          const py = result.method === "ramp" ? ground - 24 + t * 18 : ground - 38 - 4 * t * (1 - t) * maxHeight;
+          if (t === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+        ctx.restore();
+
+        if (progress > 0) {
+          const particles = Math.floor(Math.min(9, progress * 14));
+          ctx.fillStyle = `${result.methodInfo.color}99`;
+          for (let i = 0; i < particles; i++) {
+            const p = clamp(progress - (i + 1) * .025, 0, 1);
+            const px = startX + rangePx * p;
+            const py = result.method === "ramp" ? ground - 20 + p * 18 : ground - 38 - 4 * p * (1 - p) * maxHeight;
+            ctx.beginPath(); ctx.arc(px, py, Math.max(1.3, 4 - i * .3), 0, Math.PI * 2); ctx.fill();
+          }
+        }
+        drawBottle(currentX, currentY, rotation, result.methodInfo.color);
+        if (progress >= .995) {
+          ctx.fillStyle = "rgba(231, 255, 249, .9)";
+          ctx.font = "700 11px system-ui, sans-serif";
+          ctx.fillText("가상 도착점", Math.min(width - 77, currentX - 29), ground + 21);
+        }
+      }
+
+      function animateFlight(result) {
+        if (flightAnimation) cancelAnimationFrame(flightAnimation);
+        const startTime = performance.now();
+        const animationDuration = 1300 + result.energy * 100;
+        statusText.textContent = "가상 궤적을 계산하고 있습니다…";
+        function frame(now) {
+          const raw = clamp((now - startTime) / animationDuration, 0, 1);
+          const smooth = raw < .5 ? 2 * raw * raw : 1 - Math.pow(-2 * raw + 2, 2) / 2;
+          lastFlight = { progress: smooth, result };
+          drawScene(smooth, result);
+          if (raw < 1) {
+            flightAnimation = requestAnimationFrame(frame);
+          } else {
+            statusText.textContent = result.safety < 70 ? "가상 결과: 안전 검토가 더 필요한 조건입니다." : "가상 비행 완료 · 결과를 기록하거나 한 변수만 바꿔 비교해 보세요.";
+            flightAnimation = null;
+          }
+        }
+        flightAnimation = requestAnimationFrame(frame);
+      }
+
+      function runSimulation() {
+        currentResult = calculate();
+        renderResult(currentResult);
+        animateFlight(currentResult);
+      }
+
+      function renderLog() {
+        logCount.textContent = `${records.length}개 기록`;
+        if (!records.length) {
+          logList.innerHTML = '<div class="log-empty">가상 비행 결과를 기록하면<br>여기에 비교 노트가 쌓입니다.</div>';
+          return;
+        }
+        logList.innerHTML = records.slice().reverse().map(record => `
+          <article class="log-item">
+            <div class="log-item-top"><span>${escapeHtml(record.name)}</span><span>${record.range}점</span></div>
+            <div class="log-meta">${escapeHtml(record.method)} · 안정 ${record.stability} · 안전 ${record.safety}</div>
+            <button type="button" data-delete="${record.id}" aria-label="${escapeHtml(record.name)} 기록 삭제">삭제</button>
+          </article>`).join("");
+      }
+
+      function escapeHtml(text) {
+        return String(text).replace(/[&<>'"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
+      }
+
+      function saveCurrentLog() {
+        if (!currentResult) runSimulation();
+        const result = currentResult || calculate();
+        const name = experimentName.value.trim() || `${methods[result.method].name} 비교`;
+        records.push({
+          id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+          name, method: methods[result.method].name, energy: result.energy, mass: result.mass, angle: result.angle, wind: result.wind,
+          range: result.range, stability: result.stability, safety: result.safety, repeat: result.repeat,
+          createdAt: new Date().toLocaleString("ko-KR")
+        });
+        localStorage.setItem(storageKey, JSON.stringify(records));
+        experimentName.value = "";
+        renderLog();
+        statusText.textContent = "현재 가상 결과를 연구 노트에 저장했습니다.";
+      }
+
+      function exportCsv() {
+        if (!records.length) { statusText.textContent = "내보낼 연구 기록이 아직 없습니다."; return; }
+        const headers = ["이름", "방식", "에너지 단계", "상대 무게", "각도", "바람", "거리 지수", "안정성", "안전 검토", "재현성", "기록 시각"];
+        const lines = records.map(row => [row.name, row.method, row.energy, row.mass, row.angle, row.wind, row.range, row.stability, row.safety, row.repeat, row.createdAt].map(value => `"${String(value).replaceAll('"', '""')}"`).join(","));
+        const blob = new Blob(["\uFEFF" + [headers.join(","), ...lines].join("\n")], { type: "text/csv;charset=utf-8" });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = "pet-bottle-virtual-lab-notes.csv";
+        link.click();
+        URL.revokeObjectURL(url);
+        statusText.textContent = "연구 기록 CSV를 준비했습니다.";
+      }
+
+      Object.values(controls).forEach(control => control.addEventListener("input", () => { syncControls(); currentResult = null; }));
+      document.querySelector("#simulate").addEventListener("click", runSimulation);
+      document.querySelector("#saveLog").addEventListener("click", saveCurrentLog);
+      document.querySelector("#exportLog").addEventListener("click", exportCsv);
+      document.querySelector("#reset").addEventListener("click", () => {
+        controls.method.value = "elastic";
+        controls.energy.value = 3;
+        controls.mass.value = 3;
+        controls.angle.value = 45;
+        controls.wind.value = 0;
+        currentResult = null;
+        lastFlight = { progress: 0, result: null };
+        syncControls();
+        drawScene();
+        statusText.textContent = "안전 기본값으로 되돌렸습니다. 실제 수치가 아닌 가상 조건입니다.";
+      });
+      logList.addEventListener("click", event => {
+        const id = event.target.dataset.delete;
+        if (!id) return;
+        records = records.filter(item => item.id !== id);
+        localStorage.setItem(storageKey, JSON.stringify(records));
+        renderLog();
+      });
+      window.addEventListener("resize", resizeCanvas);
+
+      syncControls();
+      renderLog();
+      requestAnimationFrame(resizeCanvas);
+    })();
+  </script>
+</body>
+</html>
