@@ -872,29 +872,37 @@
 
     // High tiers can hunt any lower stage, including plants. To avoid 97
     // separate food grids, all individual agents share one nearby-food map.
+    // Start in the predator's own grid cell. In a dense ecosystem prey
+    // is usually right nearby; avoid scanning the entire 95px radius for
+    // every predator on every frame.
     function findNearbyLower(source, grid, level, rangeSq) {
       var best = null, bestSq = rangeSq;
-      var radius = Math.sqrt(rangeSq);
-      var x0 = Math.floor((source.x - radius) * grid.inverse);
-      var x1 = Math.floor((source.x + radius) * grid.inverse);
-      var y0 = Math.floor((source.y - radius) * grid.inverse);
-      var y1 = Math.floor((source.y + radius) * grid.inverse);
-      for (var x = x0; x <= x1; x++) {
-        for (var y = y0; y <= y1; y++) {
-          var cell = grid.cells[x + ":" + y];
-          if (!cell) continue;
-          var stride = Math.max(1, Math.floor(cell.length / 12));
-          var offset = Math.floor(rand(0, stride));
-          for (var j = offset; j < cell.length; j += stride) {
-            var prey = cell[j];
-            if (!prey.alive) continue;
-            var preyLevel = prey.type ? (defs[prey.type].level ||
-              (prey.type === "grazer" ? 1 : prey.type === "meso" ? 2 : 3)) : 0;
-            if (preyLevel >= level) continue;
-            var d = distanceSq(source, prey);
-            if (d < bestSq) { bestSq = d; best = prey; }
+      var cx = Math.floor(source.x * grid.inverse);
+      var cy = Math.floor(source.y * grid.inverse);
+      var scanRadius = Math.ceil(Math.sqrt(rangeSq) * grid.inverse);
+      for (var ring = 0; ring <= scanRadius; ring++) {
+        for (var dx = -ring; dx <= ring; dx++) {
+          for (var dy = -ring; dy <= ring; dy++) {
+            if (ring !== 0 && Math.abs(dx) !== ring && Math.abs(dy) !== ring) continue;
+            var cell = grid.cells[(cx + dx) + ":" + (cy + dy)];
+            if (!cell) continue;
+            // A handful of random nearby individuals is enough for choosing
+            // a plausible prey; it avoids scanning huge dense clusters.
+            var stride = Math.max(1, Math.ceil(cell.length / 8));
+            var offset = Math.floor(rand(0, stride));
+            for (var j = offset; j < cell.length; j += stride) {
+              var prey = cell[j];
+              if (!prey.alive) continue;
+              var preyLevel = prey.type ? (defs[prey.type].level ||
+                (prey.type === "grazer" ? 1 : prey.type === "meso" ? 2 : 3)) : 0;
+              if (preyLevel >= level) continue;
+              var d = distanceSq(source, prey);
+              if (d < bestSq) { bestSq = d; best = prey; }
+            }
           }
         }
+        // We already have nearby food: further distant cells can be skipped.
+        if (best && bestSq < (ring === 0 ? 34 * 34 : Math.pow(ring * 53, 2))) return best;
       }
       return best;
     }
