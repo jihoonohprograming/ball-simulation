@@ -385,7 +385,7 @@
           <tbody id="tierBody"></tbody>
         </table>
       </div>
-      <p class="event-copy">※ 100차 소비자는 현실에 존재하는 먹이사슬이 아닙니다. 4차 이상은 초기 개체 수의 최대 1,000%까지 증가할 수 있도록 설정했습니다(성능 보호용 상한).</p>
+      <p class="event-copy">※ 모든 단계의 개체 수 상한을 해제했습니다. 대규모 개체군은 통계적으로 계산하고 대표 개체만 화면에 표시합니다. 현실에서는 100단계 먹이사슬을 유지할 수 없습니다.</p>
     </section>
 
     <section class="bottom-grid">
@@ -436,10 +436,10 @@
     var H = 600;
 
     var defs = {
-      plant: { name: "생산자 · 풀과 관목", short: "생산자", color: "#82da85", initial: 3000, max: 5200, size: 3.2, role: "producer" },
-      grazer: { name: "1차 소비자 · 초식동물", short: "초식동물", color: "#f6c36b", initial: 420, max: 900, size: 6.6, role: "grazer" },
-      meso: { name: "2차 소비자 · 중간 포식자", short: "중간 포식자", color: "#ec8e55", initial: 110, max: 260, size: 8.4, role: "meso" },
-      apex: { name: "3차 소비자 · 최상위 포식자", short: "최상위 포식자", color: "#ef635e", initial: 35, max: 85, size: 10.5, role: "apex" }
+      plant: { name: "생산자 · 풀과 관목", short: "생산자", color: "#82da85", initial: 3000, agentLimit: 4500, size: 3.2, role: "producer" },
+      grazer: { name: "1차 소비자 · 초식동물", short: "초식동물", color: "#f6c36b", initial: 420, agentLimit: 650, size: 6.6, role: "grazer" },
+      meso: { name: "2차 소비자 · 중간 포식자", short: "중간 포식자", color: "#ec8e55", initial: 110, agentLimit: 240, size: 8.4, role: "meso" },
+      apex: { name: "3차 소비자 · 최상위 포식자", short: "최상위 포식자", color: "#ef635e", initial: 35, agentLimit: 110, size: 10.5, role: "apex" }
     };
     var typeOrder = ["plant", "grazer", "meso", "apex"];
     var upperTiers = [];
@@ -456,7 +456,7 @@
       defs[type] = {
         name: level + "차 소비자", short: level + "차 소비자",
         color: "hsl(" + Math.round(260 + (level - 4) / 96 * 100) + ", 83%, 69%)",
-        initial: initial, max: initial * 10,
+        initial: initial, agentLimit: 36,
         size: 4.2 + (level % 5) * .24, role: "upper", level: level
       };
       upperTiers.push(type);
@@ -464,6 +464,9 @@
     var trackedTypes = typeOrder.concat(upperTiers);
     var animals = { plant: [], grazer: [], meso: [], apex: [] };
     upperTiers.forEach(function (type) { animals[type] = []; });
+    // Only agent rendering/processing is bounded; total populations are not.
+    var extraPopulation = Object.create(null);
+    trackedTypes.forEach(function (type) { extraPopulation[type] = 0; });
     var initialCounts = {};
     var survivalBaseline = {};
     var lastDisaster = null;
@@ -487,10 +490,30 @@
     function chance(probability) { return Math.random() < probability; }
     function distanceSq(a, b) { var dx = a.x - b.x; var dy = a.y - b.y; return dx * dx + dy * dy; }
     function formatCount(n) { return Math.max(0, Math.round(n)).toLocaleString("ko-KR"); }
+    function populationOf(type) {
+      return Math.round(animals[type].length + (extraPopulation[type] || 0));
+    }
     function countAll() {
       var result = {};
-      trackedTypes.forEach(function (type) { result[type] = animals[type].length; });
+      trackedTypes.forEach(function (type) { result[type] = populationOf(type); });
       return result;
+    }
+    function addOrganism(type, x, y, energy, amount) {
+      amount = amount == null ? 1 : Math.max(0, Math.floor(amount));
+      var slots = Math.min(amount, Math.max(0, defs[type].agentLimit - animals[type].length));
+      for (var i = 0; i < slots; i++) {
+        animals[type].push(type === "plant" ? createPlant(x, y) : createAnimal(type, x, y, energy));
+      }
+      extraPopulation[type] += amount - slots;
+    }
+    function updateExtraPopulation(type, dt, eligibleFraction, birthRate, deathRate) {
+      var extra = extraPopulation[type];
+      if (!(extra > 0)) return;
+      // Resource pressure gradually slows huge populations but does not cap them.
+      var density = populationOf(type) / Math.max(1, defs[type].initial);
+      var slowdown = 1 / (1 + Math.log1p(density) / 12);
+      extraPopulation[type] = Math.max(0, extra * (1 + dt *
+        (birthRate * eligibleFraction * slowdown - deathRate)));
     }
     function ageText() { return Math.floor(simDay).toLocaleString("ko-KR") + "일"; }
     function toPercent(current, baseline) { return baseline ? Math.max(0, current / baseline * 100) : (current ? 100 : 0); }
@@ -509,7 +532,7 @@
       var herd = animals[type];
       var distance = defs[type].size * 2 + 3;
       var minimumSq = distance * distance;
-      for (var attempt = 0; attempt < 24; attempt++) {
+      for (var attempt = 0; attempt < (herd.length > 250 ? 4 : 24); attempt++) {
         var x, y;
         if (desiredX != null && desiredY != null && attempt < 16) {
           var angle = rand(0, Math.PI * 2);
@@ -553,6 +576,7 @@
     function reset() {
       animals = { plant: [], grazer: [], meso: [], apex: [] };
       upperTiers.forEach(function (type) { animals[type] = []; });
+      trackedTypes.forEach(function (type) { extraPopulation[type] = 0; });
       trackedTypes.forEach(function (type) {
         for (var i = 0; i < defs[type].initial; i++) {
           animals[type].push(type === "plant" ? createPlant() : createAnimal(type));
@@ -661,11 +685,21 @@
     }
 
     function removeDead(type) {
-      animals[type] = animals[type].filter(function (item) { return item.alive; });
+      var herd = animals[type], written = 0;
+      for (var i = 0; i < herd.length; i++) {
+        if (herd[i].alive) herd[written++] = herd[i];
+      }
+      herd.length = written;
+      // Replenish up to four visible representative organisms from the
+      // aggregate pool. Population totals do not change.
+      var refill = Math.min(4, defs[type].agentLimit - written,
+        Math.floor(extraPopulation[type]));
+      for (var j = 0; j < refill; j++) {
+        herd.push(type === "plant" ? createPlant() : createAnimal(type));
+      }
+      extraPopulation[type] -= refill;
     }
 
-    // Prevent animals of the same species from occupying the same spot.
-    // The cell grid keeps the calculation near-linear even with large herds.
     function separateSpecies(type, passes) {
       var herd = animals[type];
       var minDist = defs[type].size * 2 + 3;
@@ -714,110 +748,105 @@
     }
 
     function spawnPlantBurst(x, y, amount) {
-      for (var i = 0; i < amount && animals.plant.length < defs.plant.max; i++) {
-        animals.plant.push(createPlant(clamp(x + rand(-45, 45), 10, W - 10), clamp(y + rand(-35, 35), 12, H - 12)));
+      for (var i = 0; i < amount; i++) {
+        addOrganism("plant", clamp(x + rand(-45, 45), 10, W - 10),
+          clamp(y + rand(-35, 35), 12, H - 12));
       }
     }
 
     function updatePlants(dt) {
-      var light = getLight();
-      var fertility = light * (1 - conditions.drought * .65);
-      if (animals.plant.length > 0) {
-        // Strong regrowth offsets the much larger grazer population.
-        // Growth accelerates when bare ground opens up after grazing.
-        var coverage = animals.plant.length / defs.plant.max;
-        var openSpace = Math.max(0, 1 - coverage);
-        var naturalGrowth = (80 + animals.plant.length * .12) * (.5 + openSpace * 1.5);
-        plantSpawnDebt += dt * naturalGrowth * plantGrowth * fertility;
-        while (plantSpawnDebt >= 1 && animals.plant.length < defs.plant.max) {
-          animals.plant.push(createPlant());
-          plantSpawnDebt -= 1;
-        }
-        if (animals.plant.length >= defs.plant.max) plantSpawnDebt = Math.min(plantSpawnDebt, 1);
+      var fertility = getLight() * (1 - conditions.drought * .65);
+      if (populationOf("plant") > 0) {
+        var total = populationOf("plant");
+        var open = Math.max(0, 1 - total / 5200);
+        var growth = (80 + total * .12) * (.5 + open * 1.5);
+        // Growth always remains possible; crowding just slows its rate.
+        var crowding = 1 / Math.sqrt(Math.max(1, total / 5200));
+        plantSpawnDebt += dt * growth * plantGrowth * fertility * crowding;
+        var births = Math.floor(plantSpawnDebt);
+        if (births) { addOrganism("plant", null, null, null, births); plantSpawnDebt -= births; }
       }
-      for (var i = 0; i < animals.plant.length; i++) {
-        var plant = animals.plant[i];
+      var plants = animals.plant;
+      for (var i = 0; i < plants.length; i++) {
+        var plant = plants[i];
         plant.age += dt;
         if (plant.age > plant.maxAge) plant.alive = false;
       }
+      extraPopulation.plant = Math.max(0, extraPopulation.plant * (1 - dt / 155));
       removeDead("plant");
     }
 
     function updateGrazers(dt) {
-      var herd = animals.grazer;
-      var plantGrid = buildSpatialGrid(animals.plant, 52);
-      for (var i = 0; i < herd.length; i++) {
+      var herd = animals.grazer, plantGrid = buildSpatialGrid(animals.plant, 52);
+      var eligible = 0, limit = herd.length;
+      var recovery = clamp(defs.grazer.initial / Math.max(1, populationOf("grazer")), .75, 2.5);
+      for (var i = 0; i < limit; i++) {
         var animal = herd[i];
-        animal.age += dt;
-        animal.cooldown -= dt;
-        animal.energy -= dt * (0.72 + conditions.heat * .35);
-        var nearbyPlant = animal.energy < 75 ? findNearest(animal, plantGrid, 92 * 92) : null;
-        if (nearbyPlant) {
-          steerTowards(animal, nearbyPlant, .09);
-          if (distanceSq(animal, nearbyPlant) < 11 * 11 && animal.cooldown <= 0) {
-            nearbyPlant.alive = false;
-            animal.energy += 10.5;
-            animal.cooldown = .72;
+        animal.age += dt; animal.cooldown -= dt;
+        animal.energy -= dt * (.72 + conditions.heat * .35);
+        var nearby = animal.energy < 75 ? findNearest(animal, plantGrid, 92 * 92) : null;
+        if (nearby) {
+          steerTowards(animal, nearby, .09);
+          if (distanceSq(animal, nearby) < 11 * 11 && animal.cooldown <= 0) {
+            nearby.alive = false; animal.energy += 10.5; animal.cooldown = .72;
           }
-        } else {
-          wander(animal, .04);
-        }
+        } else wander(animal, .04);
         moveAnimal(animal, dt, 2.15);
-        // Faster breeding when the herbivore population is depleted.
-        var grazerRecovery = clamp(defs.grazer.initial / Math.max(1, herd.length), .75, 2.5);
-        if (animal.energy > 49 && animal.age > 16 && herd.length < defs.grazer.max && chance(dt * .052 * grazerRecovery)) {
-          animal.energy -= 20;
-          herd.push(createAnimal("grazer", animal.x + rand(-10, 10), animal.y + rand(-10, 10), 46));
+        if (animal.energy > 49 && animal.age > 16) {
+          eligible++;
+          if (chance(dt * .052 * recovery)) {
+            animal.energy -= 20;
+            addOrganism("grazer", animal.x + rand(-10, 10), animal.y + rand(-10, 10), 46);
+          }
         }
         if (animal.energy <= 0 || animal.age > animal.maxAge) animal.alive = false;
       }
-      removeDead("plant");
-      removeDead("grazer");
+      updateExtraPopulation("grazer", dt, eligible / Math.max(1, limit), .052 * recovery,
+        .007 + (populationOf("plant") === 0 ? .035 : 0));
+      removeDead("plant"); removeDead("grazer");
     }
 
     function updateMesos(dt) {
-      var pack = animals.meso;
-      var grazerGrid = buildSpatialGrid(animals.grazer, 52);
-      for (var i = 0; i < pack.length; i++) {
+      var pack = animals.meso, grid = buildSpatialGrid(animals.grazer, 52);
+      var eligible = 0, limit = pack.length;
+      var recovery = clamp(defs.meso.initial / Math.max(1, populationOf("meso")), .75, 2.5);
+      for (var i = 0; i < limit; i++) {
         var animal = pack[i];
-        animal.age += dt;
-        animal.cooldown -= dt;
+        animal.age += dt; animal.cooldown -= dt;
         animal.energy -= dt * (.54 + conditions.heat * .3);
-        var prey = animal.energy < 80 ? findNearest(animal, grazerGrid, 112 * 112) : null;
+        var prey = animal.energy < 80 ? findNearest(animal, grid, 112 * 112) : null;
         if (prey) {
           steerTowards(animal, prey, .105);
           if (distanceSq(animal, prey) < 12 * 12 && animal.cooldown <= 0) {
-            prey.alive = false;
-            animal.energy += 29;
-            animal.cooldown = 2.6;
+            prey.alive = false; animal.energy += 29; animal.cooldown = 2.6;
           }
-        } else {
-          wander(animal, .035);
-        }
+        } else wander(animal, .035);
         moveAnimal(animal, dt, 2.65);
-        // Density-responsive reproduction helps the middle predators recover.
-        var mesoRecovery = clamp(defs.meso.initial / Math.max(1, pack.length), .75, 2.5);
-        if (animal.energy > 55 && animal.age > 22 && pack.length < defs.meso.max && chance(dt * .042 * mesoRecovery)) {
-          animal.energy -= 23;
-          pack.push(createAnimal("meso", animal.x + rand(-10, 10), animal.y + rand(-10, 10), 45));
+        if (animal.energy > 55 && animal.age > 22) {
+          eligible++;
+          if (chance(dt * .042 * recovery)) {
+            animal.energy -= 23;
+            addOrganism("meso", animal.x + rand(-10, 10), animal.y + rand(-10, 10), 45);
+          }
         }
         if (animal.energy <= 0 || animal.age > animal.maxAge) animal.alive = false;
       }
-      removeDead("grazer");
-      removeDead("meso");
+      updateExtraPopulation("meso", dt, eligible / Math.max(1, limit), .042 * recovery,
+        .006 + (populationOf("grazer") === 0 ? .035 : 0));
+      removeDead("grazer"); removeDead("meso");
     }
 
     function updateApex(dt) {
       var pack = animals.apex;
-      var mesoGrid = buildSpatialGrid(animals.meso, 52);
-      var grazerGrid = buildSpatialGrid(animals.grazer, 52);
-      for (var i = 0; i < pack.length; i++) {
+      var midGrid = buildSpatialGrid(animals.meso, 52);
+      var lowGrid = buildSpatialGrid(animals.grazer, 52);
+      var eligible = 0, limit = pack.length;
+      for (var i = 0; i < limit; i++) {
         var animal = pack[i];
-        animal.age += dt;
-        animal.cooldown -= dt;
+        animal.age += dt; animal.cooldown -= dt;
         animal.energy -= dt * (.38 + conditions.heat * .24);
-        var prey = animal.energy < 83 ? findNearest(animal, mesoGrid, 135 * 135) : null;
-        if (!prey && animal.energy < 83 && animals.grazer.length) prey = findNearest(animal, grazerGrid, 115 * 115);
+        var prey = animal.energy < 83 ? findNearest(animal, midGrid, 135 * 135) : null;
+        if (!prey && animal.energy < 83) prey = findNearest(animal, lowGrid, 115 * 115);
         if (prey) {
           steerTowards(animal, prey, .115);
           if (distanceSq(animal, prey) < 14 * 14 && animal.cooldown <= 0) {
@@ -825,76 +854,97 @@
             animal.energy += prey.type === "meso" ? 42 : 21;
             animal.cooldown = prey.type === "meso" ? 4.2 : 2.9;
           }
-        } else {
-          wander(animal, .026);
-        }
+        } else wander(animal, .026);
         moveAnimal(animal, dt, 2.95);
-        if (animal.energy > 69 && animal.age > 40 && pack.length < defs.apex.max && chance(dt * .010)) {
-          animal.energy -= 36;
-          pack.push(createAnimal("apex", animal.x + rand(-10, 10), animal.y + rand(-10, 10), 39));
+        if (animal.energy > 69 && animal.age > 40) {
+          eligible++;
+          if (chance(dt * .010)) {
+            animal.energy -= 36;
+            addOrganism("apex", animal.x + rand(-10, 10), animal.y + rand(-10, 10), 39);
+          }
         }
         if (animal.energy <= 0 || animal.age > animal.maxAge) animal.alive = false;
       }
-      removeDead("grazer");
-      removeDead("meso");
-      removeDead("apex");
+      updateExtraPopulation("apex", dt, eligible / Math.max(1, limit), .010,
+        .005 + (populationOf("grazer") + populationOf("meso") === 0 ? .035 : 0));
+      removeDead("grazer"); removeDead("meso"); removeDead("apex");
     }
 
-    // Hypothetical 4th–100th consumer stages, connected by the abundance
-    // of the previous stage. Real ecosystems cannot sustain 100 trophic levels.
-    // Every consumer can feed on any lower level, including producers.
-    // Cache nearby prey in spatial grids once per simulation step.
-    function updateUpperConsumers(dt) {
-      var grids = Object.create(null);
-      var totalLower = animals.plant.length + animals.grazer.length + animals.meso.length + animals.apex.length;
-      for (var i = 0; i < upperTiers.length; i++) {
-        var type = upperTiers[i], level = defs[type].level, herd = animals[type];
-        var lowerTypes = ["plant", "grazer", "meso", "apex"].concat(upperTiers.slice(0, i));
-        var preyCount = totalLower;
-        var availableTypes = [];
-        for (var t = 0; t < lowerTypes.length; t++) {
-          var lowerType = lowerTypes[t];
-          if (animals[lowerType].length) availableTypes.push(lowerType);
+    // High tiers can hunt any lower stage, including plants. To avoid 97
+    // separate food grids, all individual agents share one nearby-food map.
+    function findNearbyLower(source, grid, level, rangeSq) {
+      var best = null, bestSq = rangeSq;
+      var radius = Math.sqrt(rangeSq);
+      var x0 = Math.floor((source.x - radius) * grid.inverse);
+      var x1 = Math.floor((source.x + radius) * grid.inverse);
+      var y0 = Math.floor((source.y - radius) * grid.inverse);
+      var y1 = Math.floor((source.y + radius) * grid.inverse);
+      for (var x = x0; x <= x1; x++) {
+        for (var y = y0; y <= y1; y++) {
+          var cell = grid.cells[x + ":" + y];
+          if (!cell) continue;
+          var stride = Math.max(1, Math.floor(cell.length / 12));
+          var offset = Math.floor(rand(0, stride));
+          for (var j = offset; j < cell.length; j += stride) {
+            var prey = cell[j];
+            if (!prey.alive) continue;
+            var preyLevel = prey.type ? (defs[prey.type].level ||
+              (prey.type === "grazer" ? 1 : prey.type === "meso" ? 2 : 3)) : 0;
+            if (preyLevel >= level) continue;
+            var d = distanceSq(source, prey);
+            if (d < bestSq) { bestSq = d; best = prey; }
+          }
         }
-        for (var j = 0, limit = herd.length; j < limit; j++) {
+      }
+      return best;
+    }
+
+    function updateUpperConsumers(dt) {
+      var allPrey = [];
+      trackedTypes.forEach(function (type) {
+        var list = animals[type];
+        for (var i = 0; i < list.length; i++) if (list[i].alive) allPrey.push(list[i]);
+      });
+      var grid = buildSpatialGrid(allPrey, 53);
+      var lowerTotal = populationOf("plant") + populationOf("grazer") +
+        populationOf("meso") + populationOf("apex");
+      for (var n = 0; n < upperTiers.length; n++) {
+        var type = upperTiers[n], level = defs[type].level;
+        var herd = animals[type], limit = herd.length;
+        var eligible = 0, hasFood = lowerTotal > 0;
+        var recovery = clamp(defs[type].initial / Math.max(1, populationOf(type)), .7, 2);
+        for (var j = 0; j < limit; j++) {
           var a = herd[j];
           a.age += dt; a.cooldown -= dt;
           a.energy -= dt * (.32 + conditions.heat * .19);
-          if (availableTypes.length) {
-            // Prefer nearby prey without searching all animals on every step.
-            var prey = null;
-            for (var tries = 0; tries < 3 && !prey; tries++) {
-              var chosen = availableTypes[Math.floor(rand(0, availableTypes.length))];
-              if (!grids[chosen]) grids[chosen] = buildSpatialGrid(animals[chosen], 55);
-              prey = findNearest(a, grids[chosen], 95 * 95);
-            }
-            if (prey && prey.alive) {
+          if (hasFood) {
+            var prey = findNearbyLower(a, grid, level, 95 * 95);
+            if (prey) {
               steerTowards(a, prey, .028);
               if (distanceSq(a, prey) < 18 * 18 && a.cooldown <= 0) {
                 prey.alive = false;
                 a.energy = Math.min(110, a.energy + (prey.type ? 16 : 10));
                 a.cooldown = 3.5;
               }
-            } else {
-              wander(a, .035);
-            }
+            } else wander(a, .035);
           } else wander(a, .04);
           moveAnimal(a, dt, 1.45 + level % 4 * .2);
-          var recovery = clamp(defs[type].initial / Math.max(1, herd.length), .7, 2);
-          if (a.energy > 65 && a.age > 19 && availableTypes.length &&
-              herd.length < defs[type].max && chance(dt * .032 * recovery)) {
-            a.energy -= 18;
-            herd.push(createAnimal(type, a.x, a.y, 48));
+          if (a.energy > 65 && a.age > 19 && hasFood) {
+            eligible++;
+            if (chance(dt * .032 * recovery)) {
+              a.energy -= 18;
+              addOrganism(type, a.x, a.y, 48);
+            }
           }
           if (a.age > a.maxAge || a.energy <= 0) a.alive = false;
         }
+        updateExtraPopulation(type, dt, eligible / Math.max(1, limit),
+          .032 * recovery, hasFood ? .0055 : .04);
         removeDead(type);
-        if (type === "tier" + selectedLevel) separateSpecies(type, 1);
-        totalLower += herd.length;
+        if (type === "tier" + selectedLevel && herd.length < 100) separateSpecies(type, 1);
+        lowerTotal += populationOf(type);
       }
-      // Dead prey are filtered in the normal next update; spatial lookup
-      // ignores dead items immediately.
-      for (var k = 0; k < trackedTypes.length; k++) removeDead(trackedTypes[k]);
+      trackedTypes.forEach(removeDead);
     }
 
     function getLight() { return clamp(1 - conditions.ash * .82, .10, 1); }
@@ -918,10 +968,10 @@
       updateMesos(dt);
       updateApex(dt);
       updateUpperConsumers(dt);
-      // Separate members of each food-chain level after movement and births.
-      separateSpecies("grazer", 2);
-      separateSpecies("meso", 2);
-      separateSpecies("apex", 2);
+      // Avoid expensive collision calculations in very dense populations.
+      if (animals.grazer.length < 350) separateSpecies("grazer", 1);
+      if (animals.meso.length < 300) separateSpecies("meso", 1);
+      if (animals.apex.length < 200) separateSpecies("apex", 1);
       updateEffects(dt);
       simDay += dt;
       if (simDay - lastHistoryDay >= 1) recordHistory();
@@ -965,7 +1015,12 @@
         }
       }
       animals[type] = survivors;
-      return removed;
+      // Approximate effects on non-rendered individuals using area coverage.
+      var area = Math.min(1, Math.PI * radius * radius / (W * H));
+      var virtualRate = clamp(globalDamage + baseDamage * area * .42, 0, .995);
+      var virtualLoss = Math.floor(extraPopulation[type] * virtualRate);
+      extraPopulation[type] -= virtualLoss;
+      return removed + virtualLoss;
     }
 
     function causeMeteor() {
@@ -1064,8 +1119,10 @@
       ctx.strokeStyle = "rgba(106,224,116,.88)";
       ctx.lineWidth = 1.1;
       ctx.beginPath();
-      for (var i = 0; i < animals.plant.length; i++) {
-        var plant = animals.plant[i];
+      var visible = animals.plant;
+      var stride = Math.max(1, Math.ceil(visible.length / 1800));
+      for (var i = 0; i < visible.length; i += stride) {
+        var plant = visible[i];
         var size = 2.6 + (plant.age % 17) / 17 * 2.7;
         ctx.moveTo(plant.x, plant.y + 2); ctx.lineTo(plant.x - size * .65, plant.y - size);
         ctx.moveTo(plant.x, plant.y + 2); ctx.lineTo(plant.x, plant.y - size * 1.45);
@@ -1168,11 +1225,15 @@
       drawBackground();
       drawPlants();
       ["grazer", "meso", "apex"].forEach(function (type) {
-        animals[type].forEach(drawAnimal);
+        var herd = animals[type];
+        var stride = Math.max(1, Math.ceil(herd.length / 240));
+        for (var i = 0; i < herd.length; i += stride) drawAnimal(herd[i]);
       });
       upperTiers.forEach(function (type) {
         if (focusTiers && type !== "tier" + selectedLevel && type !== "tier" + (selectedLevel - 1)) return;
-        animals[type].forEach(drawAnimal);
+        var herd = animals[type], selected = type === "tier" + selectedLevel;
+        var stride = selected ? 1 : Math.max(1, Math.ceil(herd.length / 18));
+        for (var i = 0; i < herd.length; i += stride) drawAnimal(herd[i]);
       });
       drawEffects();
       drawTarget();
@@ -1317,11 +1378,13 @@
         // does not skip feeding, reproduction, or survival checks.
         var remaining = raw * speed * .29;
         var iterations = 0;
-        while (remaining > 0.000001 && iterations < 14) {
+        var frameStart = performance.now();
+        while (remaining > 0.000001 && iterations < 10) {
           var step = Math.min(.25, remaining);
           update(step);
           remaining -= step;
           iterations++;
+          if (performance.now() - frameStart > 12) break;
         }
       }
       // Render every other frame at most; the simulation still advances.
@@ -1411,14 +1474,18 @@
       var y = clamp((event.clientY - rect.top) / rect.height * H, 20, H - 20);
       var type = placementLevel === 0 ? "plant" : selectedTierType(placementLevel);
       var count = 0;
-      for (var i = 0; i < placementAmount && animals[type].length < defs[type].max; i++) {
+      for (var i = 0; i < placementAmount; i++) {
         var a = rand(0, Math.PI * 2), r = Math.sqrt(Math.random()) * 38;
         var px = clamp(x + Math.cos(a) * r, 15, W - 15);
         var py = clamp(y + Math.sin(a) * r, 20, H - 20);
-        animals[type].push(type === "plant" ? createPlant(px, py) : createAnimal(type, px, py, 75));
+        if (animals[type].length >= defs[type].agentLimit && animals[type].length > 0) {
+          var index = Math.floor(Math.random() * animals[type].length);
+          animals[type][index] = type === "plant" ? createPlant(px, py) : createAnimal(type, px, py, 75);
+          extraPopulation[type] += 1;
+        } else addOrganism(type, px, py, 75);
         count++;
       }
-      document.getElementById("placementStatus").textContent = (placementLevel === 0 ? "생산자" : placementLevel + "차 소비자") + " " + count + "개체 배치 완료 · 현재 " + animals[type].length + "개체";
+      document.getElementById("placementStatus").textContent = (placementLevel === 0 ? "생산자" : placementLevel + "차 소비자") + " " + count + "개체 배치 완료 · 현재 " + formatCount(populationOf(type)) + "개체";
       updateUi(true);
     }
     document.getElementById("plantLevel").addEventListener("input", function (event) {
