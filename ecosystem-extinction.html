@@ -385,7 +385,7 @@
           <tbody id="tierBody"></tbody>
         </table>
       </div>
-      <p class="event-copy">※ 100차 소비자는 현실에 존재하는 먹이사슬이 아닙니다. 4차 이상은 먹이 공급과 에너지 전달을 단순화해 만든 가상 실험 단계입니다.</p>
+      <p class="event-copy">※ 100차 소비자는 현실에 존재하는 먹이사슬이 아닙니다. 4차 이상은 초기 개체 수의 최대 1,000%까지 증가할 수 있도록 설정했습니다(성능 보호용 상한).</p>
     </section>
 
     <section class="bottom-grid">
@@ -456,7 +456,7 @@
       defs[type] = {
         name: level + "차 소비자", short: level + "차 소비자",
         color: "hsl(" + Math.round(260 + (level - 4) / 96 * 100) + ", 83%, 69%)",
-        initial: initial, max: initial * 3,
+        initial: initial, max: initial * 10,
         size: 4.2 + (level % 5) * .24, role: "upper", level: level
       };
       upperTiers.push(type);
@@ -493,7 +493,7 @@
       return result;
     }
     function ageText() { return Math.floor(simDay).toLocaleString("ko-KR") + "일"; }
-    function toPercent(current, baseline) { return baseline ? clamp(current / baseline * 100, 0, 999) : (current ? 100 : 0); }
+    function toPercent(current, baseline) { return baseline ? Math.max(0, current / baseline * 100) : (current ? 100 : 0); }
     function rgba(hex, alpha) {
       var n = hex.replace("#", "");
       var r = parseInt(n.substring(0,2),16);
@@ -1190,25 +1190,36 @@
       var pad = { left: 44, right: 20, top: 16, bottom: 29 };
       var pw = 1000 - pad.left - pad.right;
       var ph = 220 - pad.top - pad.bottom;
-      [0, 50, 100, 150, 200].forEach(function (tick) {
-        var y = pad.top + ph - (tick / 200) * ph;
+      var visibleTypes = typeOrder.concat(selectedLevel > 3 ? ["tier" + selectedLevel] : []);
+      var maxPercent = 200;
+      for (var h = 0; h < history.length; h++) {
+        for (var t = 0; t < visibleTypes.length; t++) {
+          var ty = visibleTypes[t];
+          maxPercent = Math.max(maxPercent,
+            history[h].counts[ty] / Math.max(1, initialCounts[ty]) * 100);
+        }
+      }
+      var axisMax = Math.ceil(maxPercent / 200) * 200;
+      for (var tickIndex = 0; tickIndex <= 4; tickIndex++) {
+        var tick = axisMax * tickIndex / 4;
+        var y = pad.top + ph - (tick / axisMax) * ph;
         chartCtx.strokeStyle = "rgba(211,255,219,.10)";
         chartCtx.lineWidth = 1;
         chartCtx.beginPath(); chartCtx.moveTo(pad.left,y); chartCtx.lineTo(1000-pad.right,y); chartCtx.stroke();
         chartCtx.fillStyle = "rgba(171,201,178,.72)";
         chartCtx.font = "10px system-ui";
-        chartCtx.fillText(tick + "%", 4, y + 3);
-      });
+        chartCtx.fillText(Math.round(tick) + "%", 4, y + 3);
+      }
       if (history.length < 2) return;
       var firstDay = history[0].day;
       var lastDay = history[history.length - 1].day;
       var span = Math.max(1, lastDay - firstDay);
-      typeOrder.concat(selectedLevel > 3 ? ["tier" + selectedLevel] : []).forEach(function(type) {
+      visibleTypes.forEach(function(type) {
         chartCtx.beginPath();
         history.forEach(function(point, index) {
           var x = pad.left + ((point.day - firstDay) / span) * pw;
-          var value = clamp(point.counts[type] / Math.max(1, initialCounts[type]) * 100, 0, 200);
-          var y = pad.top + ph - (value / 200) * ph;
+          var value = point.counts[type] / Math.max(1, initialCounts[type]) * 100;
+          var y = pad.top + ph - (value / axisMax) * ph;
           if (index === 0) chartCtx.moveTo(x,y); else chartCtx.lineTo(x,y);
         });
         chartCtx.strokeStyle = defs[type].color;
@@ -1237,7 +1248,7 @@
       return level === 1 ? "grazer" : level === 2 ? "meso" : level === 3 ? "apex" : "tier" + level;
     }
     function selectedTierFoodName(level) {
-      return level === 1 ? "생산자(풀)" : (level - 1) + "차 소비자";
+      return level === 1 ? "생산자(풀)" : level <= 3 ? (level - 1) + "차 소비자" : "생산자~" + (level - 1) + "차 소비자";
     }
     function renderTierUi(force) {
       var type = selectedTierType(selectedLevel);
