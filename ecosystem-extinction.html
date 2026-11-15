@@ -104,6 +104,28 @@
     }
     .map-card strong { display: block; font-size: 14px; color: white; margin-bottom: 2px; }
     .world-legend { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+    .view-switch { position: absolute; z-index: 3; right: 14px; bottom: 14px; display: flex; gap: 3px;
+      padding: 5px; border: 1px solid rgba(200,240,211,.14); border-radius: 12px; background: rgba(7,24,18,.87); }
+    .view-switch button { background: transparent; border: 0; color: #adbfaf; padding: 9px 11px; border-radius: 8px;
+      font-size: 12px; font-weight: 800; cursor: pointer; }
+    .view-switch button.active { background: #c2efcb; color: #10271b; }
+    .view-switch button:focus-visible { outline: 2px solid #b2efc2; outline-offset: 2px; }
+    .focus-label { padding: 8px 11px; border-radius: 10px; font-size: 12px; font-weight: 800;
+      color: #d5f9dd; background: rgba(5, 20, 13, .72); border: 1px solid rgba(200,240,211,.15); }
+    .expanded-panel { display: block; margin-top: 14px; border: 1px solid var(--line);
+      background: rgba(14, 32, 27, .7); border-radius: 16px; overflow: hidden; }
+    .expanded-panel > summary { list-style: none; cursor: pointer; padding: 16px 18px; font-weight: 800;
+      color: #e8f8eb; font-size: 13px; display: flex; align-items: center; justify-content: space-between; }
+    .expanded-panel > summary::-webkit-details-marker { display: none; }
+    .expanded-panel > summary::after { content: "⌄"; font-size: 19px; color: #9fdcb4; }
+    .expanded-panel[open] > summary::after { content: "⌃"; }
+    .expanded-panel > summary:focus-visible { outline: 2px solid #9ce6b2; border-radius: 16px; }
+    .expanded-panel[open] > summary { border-bottom: 1px solid var(--line); }
+    .expanded-panel .bottom-grid { margin: 14px; }
+    .advanced-controls { border-radius: 14px; border: 1px solid var(--line); background: rgba(2,12,9,.2); }
+    .advanced-controls > summary { padding: 14px 12px; cursor: pointer; font-size: 13px; font-weight: 800; color: #e0f1e5; }
+    .advanced-controls > .control-block { margin: 10px; }
+    .advanced-controls > .notice { margin: 10px; }
     .legend-chip {
       display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
       padding: 7px 9px; border-radius: 999px; border: 1px solid rgba(226,255,228,.12);
@@ -158,6 +180,9 @@
     }
     .tier-panel { margin-top: 16px; padding: 16px; }
     .tier-controls { display: grid; grid-template-columns: minmax(250px, 1fr) 250px; gap: 16px; align-items: center; }
+    .tier-list-details { margin-top: 12px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+    .tier-list-details summary { padding: 12px 14px; font-size: 12px; color: #d1e9d4; font-weight: 800; cursor: pointer; }
+    .tier-list-details summary:hover { background: rgba(155,235,171,.09); }
     .tier-table-wrap { max-height: 380px; overflow-y: auto; overflow-x: auto; margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; }
     .tier-table { min-width: 550px; }
     .tier-table thead { position: sticky; top: 0; background: #152922; z-index: 1; }
@@ -224,6 +249,10 @@
       .live { display: none; }
       .world-toolbar { flex-direction: column; }
       .world-legend { justify-content: flex-start; }
+      .view-switch { right: 10px; bottom: 10px; }
+      .view-switch button { padding: 8px 9px; font-size: 11px; }
+      .canvas-note { bottom: 61px; left: 10px; max-width: calc(100% - 20px); }
+      .focus-label { font-size: 11px; }
       .population-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
       .tier-controls { grid-template-columns: 1fr; }
       .bottom-grid { grid-template-columns: 1fr; }
@@ -253,16 +282,17 @@
             <strong id="seasonLabel">초원 생태계 · 안정</strong>
             <span id="eventLabel">재난 없음</span>
           </div>
-          <div class="world-legend" aria-label="생물 범례">
-            <span class="legend-chip"><i style="background:#82da85"></i>생산자</span>
-            <span class="legend-chip"><i style="background:#f6c36b"></i>초식동물</span>
-            <span class="legend-chip"><i style="background:#ec8e55"></i>중간 포식자</span>
-            <span class="legend-chip"><i style="background:#ef635e"></i>3차 소비자</span>
-            <span class="legend-chip"><i style="background:#bb9dff"></i>4~100차 소비자</span>
+          <div class="world-legend" aria-label="현재 관찰 생물">
+            <span class="focus-label" id="mapFocusLabel">10차 소비자 · 집중 관찰</span>
           </div>
         </div>
         <canvas id="world" aria-label="생태계 시뮬레이션 지도"></canvas>
-        <div class="canvas-note">지도를 클릭하면 재난 위치를 고정할 수 있습니다.</div>
+        <div class="canvas-note" id="mapGuide">선택한 단계만 표시 중 · 아래에서 단계 변경</div>
+        <div class="view-switch" id="worldViewSwitch" role="group" aria-label="지도에 표시할 생물">
+          <button type="button" data-view="focus" class="active" aria-pressed="true">선택만</button>
+          <button type="button" data-view="food" aria-pressed="false">먹이 포함</button>
+          <button type="button" data-view="all" aria-pressed="false">전체 보기</button>
+        </div>
       </article>
 
       <aside class="panel controls">
@@ -286,6 +316,8 @@
           </div>
         </section>
 
+        <details class="advanced-controls" id="settingsDetails">
+          <summary>환경·재난 설정</summary>
         <section class="control-block">
           <h2 class="section-title">식물 재생</h2>
           <div class="metric-line"><span>풀 성장 속도</span><output id="growthOutput">1.5×</output></div>
@@ -322,6 +354,8 @@
           <p class="event-copy" id="targetCopy">현재 재난은 무작위 위치에서 발생합니다.</p>
         </section>
 
+        <div class="notice">생존율은 마지막 재난 직전 개체 수를 기준으로 계산합니다.</div>
+        </details>
         <section class="control-block">
           <h2 class="section-title">현재 환경</h2>
           <div class="small-stats">
@@ -331,7 +365,6 @@
           </div>
         </section>
 
-        <div class="notice">생존율은 <b>마지막 재난이 일어난 직전의 개체 수</b>와 현재 개체 수를 비교합니다. 0마리가 되면 그 생물군은 이 초원에서 멸종됩니다.</div>
       </aside>
     </section>
 
@@ -350,6 +383,37 @@
       </article>
     </section>
 
+    <section class="panel tier-panel" aria-label="1차부터 100차까지 소비자 관찰">
+      <h2 class="panel-title" style="padding:0">100단계 먹이사슬 · 소비자 관찰</h2>
+      <p class="panel-description" style="margin:6px 0 14px">1차부터 100차까지 각 단계의 개체 수와 먹이 관계를 비교할 수 있습니다. 표의 행도 선택할 수 있습니다.</p>
+      <div class="tier-controls">
+        <div>
+          <div class="metric-line"><span>관찰할 소비자 단계</span><output id="selectedTierLabel" class="tier-highlight">10차 소비자</output></div>
+          <input type="range" id="tierLevel" min="1" max="100" step="1" value="10" aria-label="관찰할 소비자 단계">
+          <p class="event-copy">다른 단계도 보려면 지도에서 ‘먹이 포함’ 또는 ‘전체 보기’를 선택하세요.</p>
+        </div>
+        <div class="tier-summary">
+          <span>선택한 단계의 개체 수</span><strong id="selectedTierCount">0마리</strong>
+          <span id="selectedTierFood">먹이: 생산자~99차 소비자</span>
+          <span id="selectedTierSurvival">단계별 생존력: 5.5배 수명</span>
+          <span id="selectedTierBoost">최근 먹이 번식 보너스: ×1.0</span>
+          <span id="tierTotal">전체 소비자 0마리</span>
+        </div>
+      </div>
+      <details class="tier-list-details" id="tierTableDetails">
+        <summary>전체 100단계 목록 펼쳐 보기</summary>
+      <div class="tier-table-wrap">
+        <table class="tier-table">
+          <thead><tr><th>단계</th><th>주 먹이</th><th>초기</th><th>현재</th><th>생존율</th></tr></thead>
+          <tbody id="tierBody"></tbody>
+        </table>
+      </div>
+      </details>
+      <p class="event-copy">※ 높은 단계일수록 수명이 길고 에너지 소비와 재난 피해가 줄어듭니다. 높은 단계의 먹이를 사냥하면 일정 기간 번식이 빨라집니다. 개체 수 상한은 없으며 화면에는 대표 개체만 표시합니다. 현실의 생태계가 아닌 가상 실험입니다.</p>
+    </section>
+
+    <details class="expanded-panel" id="placementDetails">
+      <summary>원하는 위치에 생물 추가하기</summary>
     <section class="panel tier-panel">
       <h2 class="panel-title">지도에 생물 직접 배치</h2>
       <p class="panel-description">단계와 수량을 고른 뒤 지도에서 원하는 위치를 클릭하세요. 0차는 생산자(풀)입니다.</p>
@@ -364,32 +428,10 @@
       </div>
       <p class="event-copy" id="placementStatus">배치 모드가 꺼져 있습니다.</p>
     </section>
-    <section class="panel tier-panel" aria-label="1차부터 100차까지 소비자 관찰">
-      <h2 class="panel-title" style="padding:0">100단계 먹이사슬 · 소비자 관찰</h2>
-      <p class="panel-description" style="margin:6px 0 14px">1차부터 100차까지 각 단계의 개체 수와 먹이 관계를 비교할 수 있습니다. 표의 행도 선택할 수 있습니다.</p>
-      <div class="tier-controls">
-        <div>
-          <div class="metric-line"><span>관찰할 소비자 단계</span><output id="selectedTierLabel" class="tier-highlight">100차 소비자</output></div>
-          <input type="range" id="tierLevel" min="1" max="100" step="1" value="100" aria-label="관찰할 소비자 단계">
-          <button type="button" id="tierModeButton" class="button secondary tier-mode">전체 단계 표시 · 선택 단계 강조하기</button>
-        </div>
-        <div class="tier-summary">
-          <span>선택한 단계의 개체 수</span><strong id="selectedTierCount">0마리</strong>
-          <span id="selectedTierFood">먹이: 생산자~99차 소비자</span>
-          <span id="selectedTierSurvival">단계별 생존력: 5.5배 수명</span>
-          <span id="selectedTierBoost">최근 먹이 번식 보너스: ×1.0</span>
-          <span id="tierTotal">전체 소비자 0마리</span>
-        </div>
-      </div>
-      <div class="tier-table-wrap">
-        <table class="tier-table">
-          <thead><tr><th>단계</th><th>주 먹이</th><th>초기</th><th>현재</th><th>생존율</th></tr></thead>
-          <tbody id="tierBody"></tbody>
-        </table>
-      </div>
-      <p class="event-copy">※ 높은 단계일수록 수명이 길고 에너지 소비와 재난 피해가 줄어듭니다. 높은 단계의 먹이를 사냥하면 일정 기간 번식이 빨라집니다. 개체 수 상한은 없으며 화면에는 대표 개체만 표시합니다. 현실의 생태계가 아닌 가상 실험입니다.</p>
-    </section>
+    </details>
 
+    <details class="expanded-panel" id="statsDetails">
+      <summary>상세 통계 · 개체 수 그래프 펼쳐 보기</summary>
     <section class="bottom-grid">
       <article class="panel">
         <h2 class="panel-title">재난 뒤 생존 현황</h2>
@@ -415,12 +457,16 @@
         </div>
       </article>
     </section>
+    </details>
 
-    <section class="panel" style="margin-top:16px">
+    <details class="expanded-panel" id="eventsDetails">
+      <summary>관찰 기록 펼쳐 보기</summary>
+    <section class="panel" style="margin:14px">
       <h2 class="panel-title">관찰 기록</h2>
       <p class="panel-description">재난과 멸종 위험 상태가 이곳에 기록됩니다.</p>
       <div class="event-log" id="eventLog"></div>
     </section>
+    </details>
 
     <p class="footer-note">이 프로그램은 먹이, 번식, 노화, 재난 피해와 환경 회복을 단순화한 교육용 가상 모델입니다. 특히 100단계 먹이사슬은 실제 자연에서 유지되는 구조가 아니며 에너지 전달을 탐색하기 위한 실험입니다.</p>
   </main>
@@ -445,8 +491,8 @@
     };
     var typeOrder = ["plant", "grazer", "meso", "apex"];
     var upperTiers = [];
-    var selectedLevel = 100;
-    var focusTiers = false;
+    var selectedLevel = 10;
+    var viewMode = "focus";
     var placementMode = false;
     var placementLevel = 1;
     var placementAmount = 10;
@@ -1192,13 +1238,13 @@
       for (var l = 0; l < 6; l++) ctx.fillRect(0, H - l * 60, W, 1);
     }
 
-    function drawPlants() {
-      // Batch all grass blades into a single stroke to keep dense ecosystems smooth.
+    function drawPlants(maxVisible) {
+      // Batch a sparse sample of grass blades into a single stroke.
       ctx.strokeStyle = "rgba(106,224,116,.88)";
       ctx.lineWidth = 1.1;
       ctx.beginPath();
       var visible = animals.plant;
-      var stride = Math.max(1, Math.ceil(visible.length / 1800));
+      var stride = Math.max(1, Math.ceil(visible.length / (maxVisible || 1800)));
       for (var i = 0; i < visible.length; i += stride) {
         var plant = visible[i];
         var size = 2.6 + (plant.age % 17) / 17 * 2.7;
@@ -1218,10 +1264,10 @@
       ctx.rotate(angle);
       if (d.role === "upper") {
         ctx.shadowBlur = 0;
-        ctx.globalAlpha = focusTiers && d.level !== selectedLevel && d.level !== selectedLevel - 1 ? .10 : .88;
+        ctx.globalAlpha = d.level === selectedLevel ? .95 : (viewMode === "all" ? .38 : .28);
         ctx.fillStyle = d.color;
         ctx.beginPath(); ctx.arc(0, 0, size, 0, Math.PI * 2); ctx.fill();
-        if (d.level === selectedLevel) {
+        if (d.level === selectedLevel && viewMode !== "all") {
           ctx.strokeStyle = "#ffffff";
           ctx.lineWidth = 1.5;
           ctx.beginPath(); ctx.arc(0, 0, size + 3.8, 0, Math.PI * 2); ctx.stroke();
@@ -1301,25 +1347,36 @@
 
     function drawWorld() {
       drawBackground();
-      drawPlants();
-      ["grazer", "meso", "apex"].forEach(function (type) {
+      // Grass is subdued, rather than thousands of bright marks.
+      ctx.save();
+      ctx.globalAlpha = viewMode === "all" ? .48 : .17;
+      drawPlants(viewMode === "all" ? 900 : 150);
+      ctx.restore();
+
+      var selectedType = selectedTierType(selectedLevel);
+      function drawTier(type, limit) {
         var herd = animals[type];
-        var stride = Math.max(1, Math.ceil(herd.length / 240));
+        if (!herd || !herd.length) return;
+        var stride = Math.max(1, Math.ceil(herd.length / limit));
         for (var i = 0; i < herd.length; i += stride) drawAnimal(herd[i]);
-      });
-      upperTiers.forEach(function (type) {
-        if (focusTiers && type !== "tier" + selectedLevel && type !== "tier" + (selectedLevel - 1)) return;
-        var herd = animals[type], selected = type === "tier" + selectedLevel;
-        var stride = selected ? 1 : Math.max(1, Math.ceil(herd.length / 18));
-        for (var i = 0; i < herd.length; i += stride) drawAnimal(herd[i]);
-      });
+      }
+      if (viewMode === "all") {
+        ["grazer", "meso", "apex"].forEach(function(type) { drawTier(type, 75); });
+        upperTiers.forEach(function(type) {
+          drawTier(type, type === selectedType ? 36 : 5);
+        });
+      } else if (viewMode === "food") {
+        for (var level = 1; level < selectedLevel; level++) {
+          if (level <= 3 || level >= selectedLevel - 4) {
+            drawTier(selectedTierType(level), 18);
+          }
+        }
+        drawTier(selectedType, 100);
+      } else {
+        drawTier(selectedType, 100);
+      }
       drawEffects();
       drawTarget();
-      var density = animals.plant.length / defs.plant.initial;
-      if (density < .17) {
-        ctx.fillStyle = "rgba(244,137,79,.10)";
-        ctx.fillRect(0,0,W,H);
-      }
     }
 
     function drawChart() {
@@ -1393,6 +1450,8 @@
       var type = selectedTierType(selectedLevel);
       var now = populationOf(type);
       document.getElementById("selectedTierLabel").textContent = selectedLevel + "차 소비자";
+      document.getElementById("mapFocusLabel").textContent = selectedLevel + "차 소비자 · " +
+        (viewMode === "focus" ? "집중 관찰" : viewMode === "food" ? "먹이 함께 관찰" : "전체 단계 관찰");
       document.getElementById("selectedTierCount").textContent = formatCount(now) + "마리";
       document.getElementById("selectedTierFood").textContent = "먹을 수 있는 생물: " + selectedTierFoodName(selectedLevel);
       document.getElementById("selectedTierSurvival").textContent =
@@ -1406,7 +1465,8 @@
       var key = document.getElementById("selectedTierChartKey");
       key.style.display = selectedLevel > 3 ? "" : "none";
       key.innerHTML = '<i style="background:' + defs[type].color + '"></i>' + selectedLevel + '차 소비자 (선택)';
-      if (!force && performance.now() - lastTierUi < 600) return;
+      if (!document.getElementById("tierTableDetails").open) return;
+      if (!force && performance.now() - lastTierUi < 1000) return;
       lastTierUi = performance.now();
       var rows = [];
       for (var level = 1; level <= 100; level++) {
@@ -1450,7 +1510,7 @@
           '<td><span class="status ' + status.className + '">' + status.label + '</span></td></tr>';
       }).join("");
       renderTierUi(force);
-      if (force) drawChart();
+      if (force && document.getElementById("statsDetails").open) drawChart();
     }
 
     function frame(now) {
@@ -1475,7 +1535,7 @@
       if (renderTick % 2 === 0) drawWorld();
       if (now - lastUi > 450) {
         updateUi(false);
-        if (renderTick % 4 === 0) drawChart();
+        if (document.getElementById("statsDetails").open && renderTick % 4 === 0) drawChart();
         lastUi = now;
       }
       requestAnimationFrame(frame);
@@ -1509,10 +1569,32 @@
     document.getElementById("tierLevel").addEventListener("input", function (event) {
       selectedLevel = clamp(Number(event.target.value), 1, 100);
       updateUi(true);
+      drawWorld();
     });
-    document.getElementById("tierModeButton").addEventListener("click", function () {
-      focusTiers = !focusTiers;
-      this.textContent = focusTiers ? "선택 단계 강조 중 · 전체 보기" : "전체 단계 표시 · 선택 단계 강조하기";
+    document.querySelectorAll("#worldViewSwitch [data-view]").forEach(function (button) {
+      button.addEventListener("click", function () {
+        viewMode = this.dataset.view;
+        document.querySelectorAll("#worldViewSwitch [data-view]").forEach(function (choice) {
+          var active = choice.dataset.view === viewMode;
+          choice.classList.toggle("active", active);
+          choice.setAttribute("aria-pressed", String(active));
+        });
+        document.getElementById("mapGuide").textContent =
+          viewMode === "focus" ? "선택한 단계만 표시 중 · 아래에서 단계 변경" :
+          viewMode === "food" ? "선택 단계와 주요 먹이만 표시 중" :
+          "전체 소비자 표시 중 · 복잡하면 ‘선택만’으로 전환";
+        renderTierUi(true);
+        drawWorld();
+      });
+    });
+    document.getElementById("tierTableDetails").addEventListener("toggle", function() {
+      if (this.open) renderTierUi(true);
+    });
+    document.getElementById("statsDetails").addEventListener("toggle", function() {
+      if (this.open) {
+        resizeCanvas();
+        drawChart();
+      }
     });
     document.getElementById("tierBody").addEventListener("click", function (event) {
       var row = event.target.closest("tr[data-level]");
@@ -1520,6 +1602,7 @@
       selectedLevel = Number(row.dataset.level);
       document.getElementById("tierLevel").value = String(selectedLevel);
       updateUi(true);
+      drawWorld();
     });
     document.getElementById("plantGrowth").addEventListener("input", function (event) {
       plantGrowth = Number(event.target.value);
@@ -1588,7 +1671,10 @@
       if (placementMode) placeOrganisms(event);
       else setTargetFromEvent(event);
     });
-    window.addEventListener("resize", function () { resizeCanvas(); drawChart(); });
+    window.addEventListener("resize", function () {
+      resizeCanvas();
+      if (document.getElementById("statsDetails").open) drawChart();
+    });
     window.addEventListener("keydown", function (event) {
       if (event.code === "Space" && event.target === document.body) {
         event.preventDefault();
