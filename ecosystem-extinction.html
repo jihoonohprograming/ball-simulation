@@ -137,6 +137,9 @@
     .button.target { background: rgba(37, 97, 84, .75); }
     .button.target.active { color: #092314; background: #b1f7c2; }
 
+    .speed-presets { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; margin-top: 10px; }
+    .speed-presets button { border: 1px solid rgba(202,243,211,.18); border-radius: 8px; padding: 7px 2px; color: #c5e6ce; background: rgba(42,77,58,.65); font-size: 11px; font-weight: 800; cursor: pointer; }
+    .speed-presets button.active { color: #092314; background: #b1f7c2; border-color: #b1f7c2; }
     .metric-line { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 5px; color: #b9cfbf; font-size: 12px; }
     .metric-line output { color: #fff; font-weight: 850; font-size: 14px; }
     input[type="range"] { width: 100%; accent-color: #86db8c; cursor: ew-resize; }
@@ -258,7 +261,15 @@
           </div>
           <div style="margin-top:12px">
             <div class="metric-line"><span>시간 배속</span><output id="speedOutput">1.0×</output></div>
-            <input id="speed" type="range" min="0.25" max="20" value="1" step="0.25" aria-label="시간 배속">
+            <input id="speed" type="range" min="0.25" max="100" value="1" step="0.25" aria-label="시간 배속">
+            <div class="speed-presets" aria-label="배속 빠른 선택">
+              <button type="button" data-speed="0.5">0.5×</button>
+              <button type="button" data-speed="1" class="active">1×</button>
+              <button type="button" data-speed="5">5×</button>
+              <button type="button" data-speed="20">20×</button>
+              <button type="button" data-speed="100">100×</button>
+            </div>
+            <p class="event-copy">슬라이더로 0.25~100배속 조절 · 버튼으로 빠르게 선택</p>
           </div>
         </section>
 
@@ -366,10 +377,10 @@
     var H = 600;
 
     var defs = {
-      plant: { name: "생산자 · 풀과 관목", short: "생산자", color: "#82da85", initial: 560, max: 780, size: 3.2, role: "producer" },
-      grazer: { name: "1차 소비자 · 초식동물", short: "초식동물", color: "#f6c36b", initial: 58, max: 120, size: 6.6, role: "grazer" },
-      meso: { name: "2차 소비자 · 중간 포식자", short: "중간 포식자", color: "#ec8e55", initial: 20, max: 48, size: 8.4, role: "meso" },
-      apex: { name: "3차 소비자 · 최상위 포식자", short: "최상위 포식자", color: "#ef635e", initial: 7, max: 16, size: 10.5, role: "apex" }
+      plant: { name: "생산자 · 풀과 관목", short: "생산자", color: "#82da85", initial: 3000, max: 5200, size: 3.2, role: "producer" },
+      grazer: { name: "1차 소비자 · 초식동물", short: "초식동물", color: "#f6c36b", initial: 420, max: 780, size: 6.6, role: "grazer" },
+      meso: { name: "2차 소비자 · 중간 포식자", short: "중간 포식자", color: "#ec8e55", initial: 110, max: 210, size: 8.4, role: "meso" },
+      apex: { name: "3차 소비자 · 최상위 포식자", short: "최상위 포식자", color: "#ef635e", initial: 35, max: 85, size: 10.5, role: "apex" }
     };
     var typeOrder = ["plant", "grazer", "meso", "apex"];
     var animals = { plant: [], grazer: [], meso: [], apex: [] };
@@ -411,7 +422,7 @@
     }
 
     function createPlant(x, y) {
-      return { x: x == null ? rand(15, W - 15) : x, y: y == null ? rand(30, H - 18) : y, age: rand(0, 25), seed: Math.random() * 10, alive: true };
+      return { x: x == null ? rand(15, W - 15) : x, y: y == null ? rand(30, H - 18) : y, age: rand(0, 65), maxAge: rand(115, 195), seed: Math.random() * 10, alive: true };
     }
     function createAnimal(type, x, y, inheritedEnergy) {
       var d = defs[type];
@@ -421,8 +432,8 @@
         y: y == null ? rand(25, H - 25) : y,
         vx: rand(-1, 1),
         vy: rand(-1, 1),
-        energy: inheritedEnergy == null ? rand(37, 58) : inheritedEnergy,
-        age: rand(0, 18),
+        energy: inheritedEnergy == null ? rand(55, 76) : inheritedEnergy,
+        age: rand(0, 28),
         maxAge: type === "grazer" ? rand(95, 145) : type === "meso" ? rand(120, 170) : rand(150, 205),
         cooldown: rand(0, 1.5),
         target: null,
@@ -470,13 +481,39 @@
       }).join("");
     }
 
-    function findNearest(source, candidates, rangeSq) {
+    // Nearby prey only: avoid comparing every animal with every plant on each update.
+    function buildSpatialGrid(items, cellSize) {
+      var cells = Object.create(null);
+      var inverse = 1 / cellSize;
+      for (var i = 0; i < items.length; i++) {
+        var item = items[i];
+        if (!item.alive) continue;
+        var key = Math.floor(item.x * inverse) + ":" + Math.floor(item.y * inverse);
+        if (!cells[key]) cells[key] = [];
+        cells[key].push(item);
+      }
+      return { cells: cells, inverse: inverse };
+    }
+
+    function findNearest(source, grid, rangeSq) {
       var best = null;
       var bestDistance = rangeSq;
-      for (var i = 0; i < candidates.length; i++) {
-        var targetCandidate = candidates[i];
-        var d = distanceSq(source, targetCandidate);
-        if (d < bestDistance) { best = targetCandidate; bestDistance = d; }
+      var radius = Math.sqrt(rangeSq);
+      var minX = Math.floor((source.x - radius) * grid.inverse);
+      var maxX = Math.floor((source.x + radius) * grid.inverse);
+      var minY = Math.floor((source.y - radius) * grid.inverse);
+      var maxY = Math.floor((source.y + radius) * grid.inverse);
+      for (var x = minX; x <= maxX; x++) {
+        for (var y = minY; y <= maxY; y++) {
+          var candidates = grid.cells[x + ":" + y];
+          if (!candidates) continue;
+          for (var i = 0; i < candidates.length; i++) {
+            var candidate = candidates[i];
+            if (!candidate.alive) continue;
+            var d = distanceSq(source, candidate);
+            if (d < bestDistance) { best = candidate; bestDistance = d; }
+          }
+        }
       }
       return best;
     }
@@ -524,23 +561,30 @@
       var light = getLight();
       var fertility = light * (1 - conditions.drought * .65);
       if (animals.plant.length > 0) {
-        plantSpawnDebt += dt * (11 + animals.plant.length * .032) * fertility;
+        plantSpawnDebt += dt * (24 + animals.plant.length * .018) * fertility;
         while (plantSpawnDebt >= 1 && animals.plant.length < defs.plant.max) {
           animals.plant.push(createPlant());
           plantSpawnDebt -= 1;
         }
+        if (animals.plant.length >= defs.plant.max) plantSpawnDebt = Math.min(plantSpawnDebt, 1);
       }
-      for (var i = 0; i < animals.plant.length; i++) animals.plant[i].age += dt;
+      for (var i = 0; i < animals.plant.length; i++) {
+        var plant = animals.plant[i];
+        plant.age += dt;
+        if (plant.age > plant.maxAge) plant.alive = false;
+      }
+      removeDead("plant");
     }
 
     function updateGrazers(dt) {
       var herd = animals.grazer;
+      var plantGrid = buildSpatialGrid(animals.plant, 52);
       for (var i = 0; i < herd.length; i++) {
         var animal = herd[i];
         animal.age += dt;
         animal.cooldown -= dt;
         animal.energy -= dt * (0.72 + conditions.heat * .35);
-        var nearbyPlant = findNearest(animal, animals.plant, 92 * 92);
+        var nearbyPlant = animal.energy < 66 ? findNearest(animal, plantGrid, 92 * 92) : null;
         if (nearbyPlant) {
           steerTowards(animal, nearbyPlant, .09);
           if (distanceSq(animal, nearbyPlant) < 11 * 11 && animal.cooldown <= 0) {
@@ -552,7 +596,7 @@
           wander(animal, .04);
         }
         moveAnimal(animal, dt, 2.15);
-        if (animal.energy > 73 && animal.age > 19 && herd.length < defs.grazer.max && chance(dt * .030)) {
+        if (animal.energy > 55 && animal.age > 19 && herd.length < defs.grazer.max && chance(dt * .024)) {
           animal.energy -= 25;
           herd.push(createAnimal("grazer", animal.x + rand(-10, 10), animal.y + rand(-10, 10), 34));
         }
@@ -564,12 +608,13 @@
 
     function updateMesos(dt) {
       var pack = animals.meso;
+      var grazerGrid = buildSpatialGrid(animals.grazer, 52);
       for (var i = 0; i < pack.length; i++) {
         var animal = pack[i];
         animal.age += dt;
         animal.cooldown -= dt;
         animal.energy -= dt * (.54 + conditions.heat * .3);
-        var prey = findNearest(animal, animals.grazer, 112 * 112);
+        var prey = animal.energy < 80 ? findNearest(animal, grazerGrid, 112 * 112) : null;
         if (prey) {
           steerTowards(animal, prey, .105);
           if (distanceSq(animal, prey) < 12 * 12 && animal.cooldown <= 0) {
@@ -581,7 +626,7 @@
           wander(animal, .035);
         }
         moveAnimal(animal, dt, 2.65);
-        if (animal.energy > 81 && animal.age > 29 && pack.length < defs.meso.max && chance(dt * .011)) {
+        if (animal.energy > 65 && animal.age > 29 && pack.length < defs.meso.max && chance(dt * .018)) {
           animal.energy -= 30;
           pack.push(createAnimal("meso", animal.x + rand(-10, 10), animal.y + rand(-10, 10), 37));
         }
@@ -593,13 +638,15 @@
 
     function updateApex(dt) {
       var pack = animals.apex;
+      var mesoGrid = buildSpatialGrid(animals.meso, 52);
+      var grazerGrid = buildSpatialGrid(animals.grazer, 52);
       for (var i = 0; i < pack.length; i++) {
         var animal = pack[i];
         animal.age += dt;
         animal.cooldown -= dt;
         animal.energy -= dt * (.38 + conditions.heat * .24);
-        var prey = findNearest(animal, animals.meso, 135 * 135);
-        if (!prey && animals.grazer.length) prey = findNearest(animal, animals.grazer, 115 * 115);
+        var prey = animal.energy < 83 ? findNearest(animal, mesoGrid, 135 * 135) : null;
+        if (!prey && animal.energy < 83 && animals.grazer.length) prey = findNearest(animal, grazerGrid, 115 * 115);
         if (prey) {
           steerTowards(animal, prey, .115);
           if (distanceSq(animal, prey) < 14 * 14 && animal.cooldown <= 0) {
@@ -611,7 +658,7 @@
           wander(animal, .026);
         }
         moveAnimal(animal, dt, 2.95);
-        if (animal.energy > 88 && animal.age > 40 && pack.length < defs.apex.max && chance(dt * .0055)) {
+        if (animal.energy > 69 && animal.age > 40 && pack.length < defs.apex.max && chance(dt * .010)) {
           animal.energy -= 36;
           pack.push(createAnimal("apex", animal.x + rand(-10, 10), animal.y + rand(-10, 10), 39));
         }
@@ -777,20 +824,18 @@
     }
 
     function drawPlants() {
+      // Batch all grass blades into a single stroke to keep dense ecosystems smooth.
+      ctx.strokeStyle = "rgba(106,224,116,.88)";
+      ctx.lineWidth = 1.1;
+      ctx.beginPath();
       for (var i = 0; i < animals.plant.length; i++) {
         var plant = animals.plant[i];
         var size = 2.6 + (plant.age % 17) / 17 * 2.7;
-        ctx.save();
-        ctx.translate(plant.x, plant.y);
-        ctx.strokeStyle = "rgba(106,224,116,.92)";
-        ctx.lineWidth = 1.15;
-        ctx.beginPath();
-        ctx.moveTo(0, 2); ctx.lineTo(-size * .65, -size);
-        ctx.moveTo(0, 2); ctx.lineTo(0, -size * 1.45);
-        ctx.moveTo(0, 2); ctx.lineTo(size * .72, -size * .72);
-        ctx.stroke();
-        ctx.restore();
+        ctx.moveTo(plant.x, plant.y + 2); ctx.lineTo(plant.x - size * .65, plant.y - size);
+        ctx.moveTo(plant.x, plant.y + 2); ctx.lineTo(plant.x, plant.y - size * 1.45);
+        ctx.moveTo(plant.x, plant.y + 2); ctx.lineTo(plant.x + size * .72, plant.y - size * .72);
       }
+      ctx.stroke();
     }
 
     function drawAnimal(animal) {
@@ -801,7 +846,7 @@
       ctx.translate(animal.x, animal.y);
       ctx.rotate(angle);
       ctx.shadowColor = rgba(d.color, .6);
-      ctx.shadowBlur = 8;
+      ctx.shadowBlur = animals[animal.type].length > 100 ? 0 : 5;
       if (animal.type === "grazer") {
         ctx.fillStyle = d.color;
         ctx.beginPath(); ctx.ellipse(0,0,size, size*.66, 0, 0, Math.PI*2); ctx.fill();
@@ -964,11 +1009,19 @@
     }
 
     function frame(now) {
-      var raw = Math.min(.08, (now - lastFrame) / 1000);
+      var raw = Math.min(.08, Math.max(0, (now - lastFrame) / 1000));
       lastFrame = now;
       if (running) {
-        var dt = raw * speed * .29;
-        update(dt);
+        // Divide large time jumps into small simulation steps, so fast-forward
+        // does not skip feeding, reproduction, or survival checks.
+        var remaining = raw * speed * .29;
+        var iterations = 0;
+        while (remaining > 0.000001 && iterations < 14) {
+          var step = Math.min(.25, remaining);
+          update(step);
+          remaining -= step;
+          iterations++;
+        }
       }
       drawWorld();
       if (now - lastUi > 170) {
@@ -990,9 +1043,19 @@
       document.getElementById("targetCopy").textContent = "고정 지점이 선택되었습니다. 다음 재난은 십자선 위치에서 발생합니다.";
     }
 
+    function setSpeed(value) {
+      speed = clamp(Number(value), .25, 100);
+      document.getElementById("speed").value = String(speed);
+      document.getElementById("speedOutput").textContent = (Number.isInteger(speed) ? speed.toFixed(0) : speed.toFixed(2).replace(/0+$/, "").replace(/\\.$/, "")) + "×";
+      document.querySelectorAll("[data-speed]").forEach(function (button) {
+        button.classList.toggle("active", Number(button.dataset.speed) === speed);
+      });
+    }
     document.getElementById("speed").addEventListener("input", function (event) {
-      speed = Number(event.target.value);
-      document.getElementById("speedOutput").textContent = speed.toFixed(speed % 1 ? 2 : 0) + "×";
+      setSpeed(event.target.value);
+    });
+    document.querySelectorAll("[data-speed]").forEach(function (button) {
+      button.addEventListener("click", function () { setSpeed(this.dataset.speed); });
     });
     document.getElementById("meteorSize").addEventListener("input", function (event) {
       document.getElementById("meteorOutput").textContent = Number(event.target.value).toLocaleString("ko-KR") + " m";
