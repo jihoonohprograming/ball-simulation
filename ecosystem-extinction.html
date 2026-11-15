@@ -156,6 +156,17 @@
     .population-grid {
       display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 16px;
     }
+    .tier-panel { margin-top: 16px; padding: 16px; }
+    .tier-controls { display: grid; grid-template-columns: minmax(250px, 1fr) 250px; gap: 16px; align-items: center; }
+    .tier-table-wrap { max-height: 380px; overflow-y: auto; overflow-x: auto; margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; }
+    .tier-table { min-width: 550px; }
+    .tier-table thead { position: sticky; top: 0; background: #152922; z-index: 1; }
+    .tier-table tr[data-level] { cursor: pointer; }
+    .tier-table tr[data-level]:hover, .tier-table tr.tier-selected { background: rgba(120, 219, 164, .15); }
+    .tier-highlight { font-size: 16px; font-weight: 900; color: #e7ffe9; }
+    .tier-summary { display: grid; gap: 6px; background: rgba(72, 120, 100, .12); border-radius: 12px; padding: 12px; font-size: 12px; color: #b1cbbb; }
+    .tier-summary strong { color: white; font-size: 18px; }
+    .tier-mode { width: 100%; margin-top: 9px; }
     .population-card { min-height: 112px; padding: 15px; position: relative; overflow: hidden; }
     .population-card::after {
       content: ""; position: absolute; right: -20px; bottom: -34px; width: 90px; height: 90px;
@@ -214,6 +225,7 @@
       .world-toolbar { flex-direction: column; }
       .world-legend { justify-content: flex-start; }
       .population-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+      .tier-controls { grid-template-columns: 1fr; }
       .bottom-grid { grid-template-columns: 1fr; }
       .controls { grid-template-columns: 1fr; }
       .controls .notice { grid-column: auto; }
@@ -245,7 +257,8 @@
             <span class="legend-chip"><i style="background:#82da85"></i>생산자</span>
             <span class="legend-chip"><i style="background:#f6c36b"></i>초식동물</span>
             <span class="legend-chip"><i style="background:#ec8e55"></i>중간 포식자</span>
-            <span class="legend-chip"><i style="background:#ef635e"></i>최상위 포식자</span>
+            <span class="legend-chip"><i style="background:#ef635e"></i>3차 소비자</span>
+            <span class="legend-chip"><i style="background:#bb9dff"></i>4~100차 소비자</span>
           </div>
         </div>
         <canvas id="world" aria-label="생태계 시뮬레이션 지도"></canvas>
@@ -333,8 +346,32 @@
         <div class="pop-name">2차 소비자 · 중간 포식자</div><div class="pop-value" id="count-meso">0</div><div class="pop-detail" id="detail-meso">기준 0</div>
       </article>
       <article class="panel population-card" data-type="apex">
-        <div class="pop-name">3차 소비자 · 최상위 포식자</div><div class="pop-value" id="count-apex">0</div><div class="pop-detail" id="detail-apex">기준 0</div>
+        <div class="pop-name">3차 소비자 · 상위 포식자</div><div class="pop-value" id="count-apex">0</div><div class="pop-detail" id="detail-apex">기준 0</div>
       </article>
+    </section>
+
+    <section class="panel tier-panel" aria-label="1차부터 100차까지 소비자 관찰">
+      <h2 class="panel-title" style="padding:0">100단계 먹이사슬 · 소비자 관찰</h2>
+      <p class="panel-description" style="margin:6px 0 14px">1차부터 100차까지 각 단계의 개체 수와 먹이 관계를 비교할 수 있습니다. 표의 행도 선택할 수 있습니다.</p>
+      <div class="tier-controls">
+        <div>
+          <div class="metric-line"><span>관찰할 소비자 단계</span><output id="selectedTierLabel" class="tier-highlight">100차 소비자</output></div>
+          <input type="range" id="tierLevel" min="1" max="100" step="1" value="100" aria-label="관찰할 소비자 단계">
+          <button type="button" id="tierModeButton" class="button secondary tier-mode">전체 단계 표시 · 선택 단계 강조하기</button>
+        </div>
+        <div class="tier-summary">
+          <span>선택한 단계의 개체 수</span><strong id="selectedTierCount">0마리</strong>
+          <span id="selectedTierFood">먹이: 99차 소비자</span>
+          <span id="tierTotal">전체 소비자 0마리</span>
+        </div>
+      </div>
+      <div class="tier-table-wrap">
+        <table class="tier-table">
+          <thead><tr><th>단계</th><th>주 먹이</th><th>초기</th><th>현재</th><th>생존율</th></tr></thead>
+          <tbody id="tierBody"></tbody>
+        </table>
+      </div>
+      <p class="event-copy">※ 100차 소비자는 현실에 존재하는 먹이사슬이 아닙니다. 4차 이상은 먹이 공급과 에너지 전달을 단순화해 만든 가상 실험 단계입니다.</p>
     </section>
 
     <section class="bottom-grid">
@@ -357,7 +394,8 @@
           <span><i style="background:#82da85"></i>생산자</span>
           <span><i style="background:#f6c36b"></i>초식동물</span>
           <span><i style="background:#ec8e55"></i>중간 포식자</span>
-          <span><i style="background:#ef635e"></i>최상위 포식자</span>
+          <span><i style="background:#ef635e"></i>3차 소비자</span>
+          <span id="selectedTierChartKey"><i style="background:#bb9dff"></i>100차 소비자 (선택)</span>
         </div>
       </article>
     </section>
@@ -368,7 +406,7 @@
       <div class="event-log" id="eventLog"></div>
     </section>
 
-    <p class="footer-note">이 프로그램은 먹이, 번식, 노화, 재난 피해와 환경 회복을 단순화한 교육용 모델입니다. 실제 생태계의 정확한 예측 도구는 아닙니다.</p>
+    <p class="footer-note">이 프로그램은 먹이, 번식, 노화, 재난 피해와 환경 회복을 단순화한 교육용 가상 모델입니다. 특히 100단계 먹이사슬은 실제 자연에서 유지되는 구조가 아니며 에너지 전달을 탐색하기 위한 실험입니다.</p>
   </main>
 
   <script>
@@ -390,7 +428,24 @@
       apex: { name: "3차 소비자 · 최상위 포식자", short: "최상위 포식자", color: "#ef635e", initial: 35, max: 85, size: 10.5, role: "apex" }
     };
     var typeOrder = ["plant", "grazer", "meso", "apex"];
+    var upperTiers = [];
+    var selectedLevel = 100;
+    var focusTiers = false;
+    var lastTierUi = -1000;
+    for (var level = 4; level <= 100; level++) {
+      var type = "tier" + level;
+      var initial = level <= 10 ? 10 : level <= 30 ? 8 : level <= 60 ? 6 : 5;
+      defs[type] = {
+        name: level + "차 소비자", short: level + "차 소비자",
+        color: "hsl(" + Math.round(260 + (level - 4) / 96 * 100) + ", 83%, 69%)",
+        initial: initial, max: initial * 3,
+        size: 4.2 + (level % 5) * .24, role: "upper", level: level
+      };
+      upperTiers.push(type);
+    }
+    var trackedTypes = typeOrder.concat(upperTiers);
     var animals = { plant: [], grazer: [], meso: [], apex: [] };
+    upperTiers.forEach(function (type) { animals[type] = []; });
     var initialCounts = {};
     var survivalBaseline = {};
     var lastDisaster = null;
@@ -416,7 +471,7 @@
     function formatCount(n) { return Math.max(0, Math.round(n)).toLocaleString("ko-KR"); }
     function countAll() {
       var result = {};
-      typeOrder.forEach(function (type) { result[type] = animals[type].length; });
+      trackedTypes.forEach(function (type) { result[type] = animals[type].length; });
       return result;
     }
     function ageText() { return Math.floor(simDay).toLocaleString("ko-KR") + "일"; }
@@ -479,7 +534,8 @@
 
     function reset() {
       animals = { plant: [], grazer: [], meso: [], apex: [] };
-      typeOrder.forEach(function (type) {
+      upperTiers.forEach(function (type) { animals[type] = []; });
+      trackedTypes.forEach(function (type) {
         for (var i = 0; i < defs[type].initial; i++) {
           animals[type].push(type === "plant" ? createPlant() : createAnimal(type));
         }
@@ -497,7 +553,8 @@
       lastHistoryDay = -99;
       plantSpawnDebt = 0;
       lastDisaster = null;
-      addLog("새 생태계를 시작했습니다", "생산자부터 최상위 포식자까지 먹이사슬이 다시 형성됩니다.", "start");
+      lastTierUi = -1000;
+      addLog("100단계 생태계 시작", "생산자와 1~100차 소비자가 등장합니다. 높은 단계는 가상 먹이사슬입니다.", "start");
       recordHistory();
       updateUi(true);
     }
@@ -765,6 +822,53 @@
       removeDead("apex");
     }
 
+    // Hypothetical 4th–100th consumer stages, connected by the abundance
+    // of the previous stage. Real ecosystems cannot sustain 100 trophic levels.
+    function updateUpperConsumers(dt) {
+      var light = getLight();
+      for (var i = 0; i < upperTiers.length; i++) {
+        var type = upperTiers[i];
+        var lower = i === 0 ? "apex" : upperTiers[i - 1];
+        var herd = animals[type];
+        var food = animals[lower];
+        var available = food.length;
+        var foodFactor = clamp(available / Math.max(1, defs[lower].initial), 0, 1.3);
+        for (var j = 0, limit = herd.length; j < limit; j++) {
+          var a = herd[j];
+          a.age += dt;
+          a.cooldown -= dt;
+          a.energy -= dt * (.32 + conditions.heat * .19);
+          if (available > 0) {
+            a.energy = Math.min(110, a.energy + dt * .80 * foodFactor * light);
+            var prey = food[Math.floor(rand(0, food.length))];
+            if (prey && prey.alive) {
+              steerTowards(a, prey, .022);
+              if (available > 4 && a.cooldown <= 0 &&
+                  distanceSq(a, prey) < 22 * 22 && chance(dt * .009)) {
+                prey.alive = false;
+                a.energy = Math.min(110, a.energy + 9);
+                a.cooldown = 12;
+                available--;
+              }
+            }
+          } else {
+            wander(a, .035);
+          }
+          moveAnimal(a, dt, 1.45 + (defs[type].level % 4) * .2);
+          var recovery = clamp(defs[type].initial / Math.max(1, herd.length), .65, 2.2);
+          if (a.energy > 79 && a.age > 19 && foodFactor > .28 &&
+              herd.length < defs[type].max && chance(dt * .048 * recovery * Math.min(1, foodFactor))) {
+            a.energy -= 18;
+            herd.push(createAnimal(type, a.x, a.y, 57));
+          }
+          if (a.age > a.maxAge || a.energy <= 0) a.alive = false;
+        }
+        removeDead(type);
+        if (i % 4 === 0 || type === "tier" + selectedLevel) separateSpecies(type, 1);
+        removeDead(lower);
+      }
+    }
+
     function getLight() { return clamp(1 - conditions.ash * .82, .10, 1); }
     function updateConditions(dt) {
       conditions.ash = Math.max(0, conditions.ash - dt * .0022);
@@ -785,6 +889,7 @@
       updateGrazers(dt);
       updateMesos(dt);
       updateApex(dt);
+      updateUpperConsumers(dt);
       // Separate members of each food-chain level after movement and births.
       separateSpecies("grazer", 2);
       separateSpecies("meso", 2);
@@ -847,10 +952,12 @@
       losses.grazer = damageAt(location, radius, "grazer", .94, intensity * .29);
       losses.meso = damageAt(location, radius, "meso", .88, intensity * .24);
       losses.apex = damageAt(location, radius, "apex", .82, intensity * .18);
+      var upperLosses = 0;
+      upperTiers.forEach(function (type) { upperLosses += damageAt(location, radius, type, .75, intensity * .18); });
       conditions.ash = Math.max(conditions.ash, intensity * .98);
       conditions.heat = Math.max(conditions.heat, intensity * .72);
       effects.push({ type: "meteor", x: location.x, y: location.y, radius: radius, age: 0, life: 3.5 + intensity * 3, intensity: intensity });
-      addLog("운석 충돌 · " + size.toLocaleString("ko-KR") + "m", "충돌 반경 " + Math.round(radius) + "m(모형 지도 기준). 즉시 감소: 생산자 " + losses.plant + " · 초식 " + losses.grazer + " · 중간 포식 " + losses.meso + " · 최상위 포식 " + losses.apex, "meteor");
+      addLog("운석 충돌 · " + size.toLocaleString("ko-KR") + "m", "충돌 반경 " + Math.round(radius) + "m(모형 지도 기준). 즉시 감소: 생산자 " + losses.plant + " · 초식 " + losses.grazer + " · 중간 포식 " + losses.meso + " · 3차 " + losses.apex + " · 4~100차 " + upperLosses, "meteor");
       updateUi(true);
     }
 
@@ -866,6 +973,7 @@
       losses.grazer = damageAt(location, radius, "grazer", .86, intensity * .08);
       losses.meso = damageAt(location, radius, "meso", .76, intensity * .06);
       losses.apex = damageAt(location, radius, "apex", .66, intensity * .05);
+      upperTiers.forEach(function (type) { damageAt(location, radius, type, .66, intensity * .05); });
       conditions.ash = Math.max(conditions.ash, intensity * .91);
       conditions.heat = Math.max(conditions.heat, intensity * .53);
       effects.push({ type: "volcano", x: location.x, y: location.y, radius: radius, age: 0, life: 6 + intensity * 4, intensity: intensity });
@@ -945,6 +1053,24 @@
       ctx.save();
       ctx.translate(animal.x, animal.y);
       ctx.rotate(angle);
+      if (d.role === "upper") {
+        ctx.shadowBlur = 0;
+        ctx.globalAlpha = focusTiers && d.level !== selectedLevel && d.level !== selectedLevel - 1 ? .10 : .88;
+        ctx.fillStyle = d.color;
+        ctx.beginPath(); ctx.arc(0, 0, size, 0, Math.PI * 2); ctx.fill();
+        if (d.level === selectedLevel) {
+          ctx.strokeStyle = "#ffffff";
+          ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.arc(0, 0, size + 3.8, 0, Math.PI * 2); ctx.stroke();
+          ctx.rotate(-angle);
+          ctx.fillStyle = "#ffffff";
+          ctx.font = "bold 9px system-ui";
+          ctx.textAlign = "center";
+          ctx.fillText(String(d.level), 0, -size - 7);
+        }
+        ctx.restore();
+        return;
+      }
       ctx.shadowColor = rgba(d.color, .6);
       ctx.shadowBlur = animals[animal.type].length > 100 ? 0 : 5;
       if (animal.type === "grazer") {
@@ -1016,6 +1142,9 @@
       ["grazer", "meso", "apex"].forEach(function (type) {
         animals[type].forEach(drawAnimal);
       });
+      upperTiers.forEach(function (type) {
+        animals[type].forEach(drawAnimal);
+      });
       drawEffects();
       drawTarget();
       var density = animals.plant.length / defs.plant.initial;
@@ -1045,7 +1174,7 @@
       var firstDay = history[0].day;
       var lastDay = history[history.length - 1].day;
       var span = Math.max(1, lastDay - firstDay);
-      typeOrder.forEach(function(type) {
+      typeOrder.concat(selectedLevel > 3 ? ["tier" + selectedLevel] : []).forEach(function(type) {
         chartCtx.beginPath();
         history.forEach(function(point, index) {
           var x = pad.left + ((point.day - firstDay) / span) * pw;
@@ -1075,6 +1204,36 @@
       return { label: "생존", className: "safe" };
     }
 
+    function selectedTierType(level) {
+      return level === 1 ? "grazer" : level === 2 ? "meso" : level === 3 ? "apex" : "tier" + level;
+    }
+    function selectedTierFoodName(level) {
+      return level === 1 ? "생산자(풀)" : (level - 1) + "차 소비자";
+    }
+    function renderTierUi(force) {
+      var type = selectedTierType(selectedLevel);
+      var now = animals[type].length;
+      document.getElementById("selectedTierLabel").textContent = selectedLevel + "차 소비자";
+      document.getElementById("selectedTierCount").textContent = formatCount(now) + "마리";
+      document.getElementById("selectedTierFood").textContent = "주 먹이: " + selectedTierFoodName(selectedLevel);
+      var total = 0;
+      for (var level = 1; level <= 100; level++) total += animals[selectedTierType(level)].length;
+      document.getElementById("tierTotal").textContent = "전체 소비자 " + formatCount(total) + "마리";
+      var key = document.getElementById("selectedTierChartKey");
+      key.style.display = selectedLevel > 3 ? "" : "none";
+      key.innerHTML = '<i style="background:' + defs[type].color + '"></i>' + selectedLevel + '차 소비자 (선택)';
+      if (!force && performance.now() - lastTierUi < 600) return;
+      lastTierUi = performance.now();
+      var rows = [];
+      for (var level = 1; level <= 100; level++) {
+        var tier = selectedTierType(level);
+        var count = animals[tier].length;
+        var percent = Math.round(toPercent(count, initialCounts[tier]));
+        rows.push('<tr data-level="' + level + '"' + (level === selectedLevel ? ' class="tier-selected"' : '') + '><td><div class="organism"><span class="dot" style="background:' + defs[tier].color + '"></span>' + level + '차 소비자</div></td><td>' + selectedTierFoodName(level) + '</td><td>' + formatCount(initialCounts[tier]) + '</td><td>' + formatCount(count) + '</td><td>' + percent + '%</td></tr>');
+      }
+      document.getElementById("tierBody").innerHTML = rows.join("");
+    }
+
     function updateUi(force) {
       var counts = countAll();
       typeOrder.forEach(function(type) {
@@ -1095,7 +1254,8 @@
         ? lastDisaster.label + " 직전(" + lastDisaster.day.toLocaleString("ko-KR") + "일째)과 현재를 비교합니다. 이후 기아와 회복도 생존율에 반영됩니다."
         : "아직 재난이 일어나지 않았습니다. 현재 개체 수는 초기 생태계를 기준으로 표시됩니다.";
       var body = document.getElementById("survivalBody");
-      body.innerHTML = typeOrder.map(function(type) {
+      var survivalTypes = typeOrder.concat(selectedLevel > 3 ? ["tier" + selectedLevel] : []);
+      body.innerHTML = survivalTypes.map(function(type) {
         var base = survivalBaseline[type];
         var now = counts[type];
         var percent = toPercent(now, base);
@@ -1105,6 +1265,7 @@
           '<td class="survival-cell"><div class="survival-label">' + Math.round(percent) + '%</div><div class="bar"><span style="width:' + Math.min(percent,100) + '%;background:' + defs[type].color + '"></span></div></td>' +
           '<td><span class="status ' + status.className + '">' + status.label + '</span></td></tr>';
       }).join("");
+      renderTierUi(force);
       if (force) drawChart();
     }
 
@@ -1156,6 +1317,21 @@
     });
     document.querySelectorAll("[data-speed]").forEach(function (button) {
       button.addEventListener("click", function () { setSpeed(this.dataset.speed); });
+    });
+    document.getElementById("tierLevel").addEventListener("input", function (event) {
+      selectedLevel = clamp(Number(event.target.value), 1, 100);
+      updateUi(true);
+    });
+    document.getElementById("tierModeButton").addEventListener("click", function () {
+      focusTiers = !focusTiers;
+      this.textContent = focusTiers ? "선택 단계 강조 중 · 전체 보기" : "전체 단계 표시 · 선택 단계 강조하기";
+    });
+    document.getElementById("tierBody").addEventListener("click", function (event) {
+      var row = event.target.closest("tr[data-level]");
+      if (!row) return;
+      selectedLevel = Number(row.dataset.level);
+      document.getElementById("tierLevel").value = String(selectedLevel);
+      updateUi(true);
     });
     document.getElementById("plantGrowth").addEventListener("input", function (event) {
       plantGrowth = Number(event.target.value);
