@@ -350,6 +350,20 @@
       </article>
     </section>
 
+    <section class="panel tier-panel">
+      <h2 class="panel-title">지도에 생물 직접 배치</h2>
+      <p class="panel-description">단계와 수량을 고른 뒤 지도에서 원하는 위치를 클릭하세요. 0차는 생산자(풀)입니다.</p>
+      <div class="tier-controls">
+        <div><div class="metric-line"><span>배치할 단계</span><output id="plantLevelOutput">1차 소비자</output></div>
+          <input id="plantLevel" type="range" min="0" max="100" value="1" step="1">
+        </div>
+        <div><div class="metric-line"><span>한 번에 배치할 수</span><output id="plantAmountOutput">10마리</output></div>
+          <input id="plantAmount" type="range" min="1" max="50" value="10" step="1">
+          <button class="button tier-mode" id="placementButton" type="button">지도에 배치하기: 켜기</button>
+        </div>
+      </div>
+      <p class="event-copy" id="placementStatus">배치 모드가 꺼져 있습니다.</p>
+    </section>
     <section class="panel tier-panel" aria-label="1차부터 100차까지 소비자 관찰">
       <h2 class="panel-title" style="padding:0">100단계 먹이사슬 · 소비자 관찰</h2>
       <p class="panel-description" style="margin:6px 0 14px">1차부터 100차까지 각 단계의 개체 수와 먹이 관계를 비교할 수 있습니다. 표의 행도 선택할 수 있습니다.</p>
@@ -431,6 +445,10 @@
     var upperTiers = [];
     var selectedLevel = 100;
     var focusTiers = false;
+    var placementMode = false;
+    var placementLevel = 1;
+    var placementAmount = 10;
+    var renderTick = 0;
     var lastTierUi = -1000;
     for (var level = 4; level <= 100; level++) {
       var type = "tier" + level;
@@ -824,49 +842,59 @@
 
     // Hypothetical 4th–100th consumer stages, connected by the abundance
     // of the previous stage. Real ecosystems cannot sustain 100 trophic levels.
+    // Every consumer can feed on any lower level, including producers.
+    // Cache nearby prey in spatial grids once per simulation step.
     function updateUpperConsumers(dt) {
-      var light = getLight();
+      var grids = Object.create(null);
+      var totalLower = animals.plant.length + animals.grazer.length + animals.meso.length + animals.apex.length;
       for (var i = 0; i < upperTiers.length; i++) {
-        var type = upperTiers[i];
-        var lower = i === 0 ? "apex" : upperTiers[i - 1];
-        var herd = animals[type];
-        var food = animals[lower];
-        var available = food.length;
-        var foodFactor = clamp(available / Math.max(1, defs[lower].initial), 0, 1.3);
+        var type = upperTiers[i], level = defs[type].level, herd = animals[type];
+        var lowerTypes = ["plant", "grazer", "meso", "apex"].concat(upperTiers.slice(0, i));
+        var preyCount = totalLower;
+        var availableTypes = [];
+        for (var t = 0; t < lowerTypes.length; t++) {
+          var lowerType = lowerTypes[t];
+          if (animals[lowerType].length) availableTypes.push(lowerType);
+        }
         for (var j = 0, limit = herd.length; j < limit; j++) {
           var a = herd[j];
-          a.age += dt;
-          a.cooldown -= dt;
+          a.age += dt; a.cooldown -= dt;
           a.energy -= dt * (.32 + conditions.heat * .19);
-          if (available > 0) {
-            a.energy = Math.min(110, a.energy + dt * .80 * foodFactor * light);
-            var prey = food[Math.floor(rand(0, food.length))];
-            if (prey && prey.alive) {
-              steerTowards(a, prey, .022);
-              if (available > 4 && a.cooldown <= 0 &&
-                  distanceSq(a, prey) < 22 * 22 && chance(dt * .009)) {
-                prey.alive = false;
-                a.energy = Math.min(110, a.energy + 9);
-                a.cooldown = 12;
-                available--;
-              }
+          if (availableTypes.length) {
+            // Prefer nearby prey without searching all animals on every step.
+            var prey = null;
+            for (var tries = 0; tries < 3 && !prey; tries++) {
+              var chosen = availableTypes[Math.floor(rand(0, availableTypes.length))];
+              if (!grids[chosen]) grids[chosen] = buildSpatialGrid(animals[chosen], 55);
+              prey = findNearest(a, grids[chosen], 95 * 95);
             }
-          } else {
-            wander(a, .035);
-          }
-          moveAnimal(a, dt, 1.45 + (defs[type].level % 4) * .2);
-          var recovery = clamp(defs[type].initial / Math.max(1, herd.length), .65, 2.2);
-          if (a.energy > 79 && a.age > 19 && foodFactor > .28 &&
-              herd.length < defs[type].max && chance(dt * .048 * recovery * Math.min(1, foodFactor))) {
+            if (prey && prey.alive) {
+              steerTowards(a, prey, .028);
+              if (distanceSq(a, prey) < 18 * 18 && a.cooldown <= 0) {
+                prey.alive = false;
+                a.energy = Math.min(110, a.energy + (prey.type ? 16 : 10));
+                a.cooldown = 3.5;
+              }
+            } else {
+              wander(a, .035);
+            }
+          } else wander(a, .04);
+          moveAnimal(a, dt, 1.45 + level % 4 * .2);
+          var recovery = clamp(defs[type].initial / Math.max(1, herd.length), .7, 2);
+          if (a.energy > 65 && a.age > 19 && availableTypes.length &&
+              herd.length < defs[type].max && chance(dt * .032 * recovery)) {
             a.energy -= 18;
-            herd.push(createAnimal(type, a.x, a.y, 57));
+            herd.push(createAnimal(type, a.x, a.y, 48));
           }
           if (a.age > a.maxAge || a.energy <= 0) a.alive = false;
         }
         removeDead(type);
-        if (i % 4 === 0 || type === "tier" + selectedLevel) separateSpecies(type, 1);
-        removeDead(lower);
+        if (type === "tier" + selectedLevel) separateSpecies(type, 1);
+        totalLower += herd.length;
       }
+      // Dead prey are filtered in the normal next update; spatial lookup
+      // ignores dead items immediately.
+      for (var k = 0; k < trackedTypes.length; k++) removeDead(trackedTypes[k]);
     }
 
     function getLight() { return clamp(1 - conditions.ash * .82, .10, 1); }
@@ -1143,6 +1171,7 @@
         animals[type].forEach(drawAnimal);
       });
       upperTiers.forEach(function (type) {
+        if (focusTiers && type !== "tier" + selectedLevel && type !== "tier" + (selectedLevel - 1)) return;
         animals[type].forEach(drawAnimal);
       });
       drawEffects();
@@ -1284,10 +1313,12 @@
           iterations++;
         }
       }
-      drawWorld();
-      if (now - lastUi > 170) {
+      // Render every other frame at most; the simulation still advances.
+      renderTick++;
+      if (renderTick % 2 === 0) drawWorld();
+      if (now - lastUi > 450) {
         updateUi(false);
-        drawChart();
+        if (renderTick % 4 === 0) drawChart();
         lastUi = now;
       }
       requestAnimationFrame(frame);
@@ -1363,7 +1394,39 @@
       document.getElementById("targetButton").classList.remove("active");
       document.getElementById("targetCopy").textContent = "현재 재난은 무작위 위치에서 발생합니다.";
     });
-    world.addEventListener("click", setTargetFromEvent);
+    function placeOrganisms(event) {
+      var rect = world.getBoundingClientRect();
+      var x = clamp((event.clientX - rect.left) / rect.width * W, 15, W - 15);
+      var y = clamp((event.clientY - rect.top) / rect.height * H, 20, H - 20);
+      var type = placementLevel === 0 ? "plant" : selectedTierType(placementLevel);
+      var count = 0;
+      for (var i = 0; i < placementAmount && animals[type].length < defs[type].max; i++) {
+        var a = rand(0, Math.PI * 2), r = Math.sqrt(Math.random()) * 38;
+        var px = clamp(x + Math.cos(a) * r, 15, W - 15);
+        var py = clamp(y + Math.sin(a) * r, 20, H - 20);
+        animals[type].push(type === "plant" ? createPlant(px, py) : createAnimal(type, px, py, 75));
+        count++;
+      }
+      document.getElementById("placementStatus").textContent = (placementLevel === 0 ? "생산자" : placementLevel + "차 소비자") + " " + count + "개체 배치 완료 · 현재 " + animals[type].length + "개체";
+      updateUi(true);
+    }
+    document.getElementById("plantLevel").addEventListener("input", function (event) {
+      placementLevel = Number(event.target.value);
+      document.getElementById("plantLevelOutput").textContent = placementLevel === 0 ? "생산자(풀)" : placementLevel + "차 소비자";
+    });
+    document.getElementById("plantAmount").addEventListener("input", function (event) {
+      placementAmount = Number(event.target.value);
+      document.getElementById("plantAmountOutput").textContent = placementAmount + "마리";
+    });
+    document.getElementById("placementButton").addEventListener("click", function () {
+      placementMode = !placementMode;
+      this.textContent = placementMode ? "지도에 배치하기: 켜짐 (끄기)" : "지도에 배치하기: 켜기";
+      document.getElementById("placementStatus").textContent = placementMode ? "지도를 클릭하면 선택한 생물이 배치됩니다." : "배치 모드가 꺼져 있습니다.";
+    });
+    world.addEventListener("click", function(event) {
+      if (placementMode) placeOrganisms(event);
+      else setTargetFromEvent(event);
+    });
     window.addEventListener("resize", function () { resizeCanvas(); drawChart(); });
     window.addEventListener("keydown", function (event) {
       if (event.code === "Space" && event.target === document.body) {
