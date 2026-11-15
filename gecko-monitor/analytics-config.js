@@ -1,0 +1,1 @@
+window.LITTLEFOREST_GA4_ID = ''; // Replace with your own GA4 Measurement ID (G-XXXXXXXXXX). Never insert API secrets.
