@@ -385,8 +385,8 @@
 
     var defs = {
       plant: { name: "생산자 · 풀과 관목", short: "생산자", color: "#82da85", initial: 3000, max: 5200, size: 3.2, role: "producer" },
-      grazer: { name: "1차 소비자 · 초식동물", short: "초식동물", color: "#f6c36b", initial: 420, max: 780, size: 6.6, role: "grazer" },
-      meso: { name: "2차 소비자 · 중간 포식자", short: "중간 포식자", color: "#ec8e55", initial: 110, max: 210, size: 8.4, role: "meso" },
+      grazer: { name: "1차 소비자 · 초식동물", short: "초식동물", color: "#f6c36b", initial: 420, max: 900, size: 6.6, role: "grazer" },
+      meso: { name: "2차 소비자 · 중간 포식자", short: "중간 포식자", color: "#ec8e55", initial: 110, max: 260, size: 8.4, role: "meso" },
       apex: { name: "3차 소비자 · 최상위 포식자", short: "최상위 포식자", color: "#ef635e", initial: 35, max: 85, size: 10.5, role: "apex" }
     };
     var typeOrder = ["plant", "grazer", "meso", "apex"];
@@ -676,7 +676,7 @@
         animal.age += dt;
         animal.cooldown -= dt;
         animal.energy -= dt * (0.72 + conditions.heat * .35);
-        var nearbyPlant = animal.energy < 66 ? findNearest(animal, plantGrid, 92 * 92) : null;
+        var nearbyPlant = animal.energy < 75 ? findNearest(animal, plantGrid, 92 * 92) : null;
         if (nearbyPlant) {
           steerTowards(animal, nearbyPlant, .09);
           if (distanceSq(animal, nearbyPlant) < 11 * 11 && animal.cooldown <= 0) {
@@ -688,9 +688,11 @@
           wander(animal, .04);
         }
         moveAnimal(animal, dt, 2.15);
-        if (animal.energy > 55 && animal.age > 19 && herd.length < defs.grazer.max && chance(dt * .024)) {
-          animal.energy -= 25;
-          herd.push(createAnimal("grazer", animal.x + rand(-10, 10), animal.y + rand(-10, 10), 34));
+        // Faster breeding when the herbivore population is depleted.
+        var grazerRecovery = clamp(defs.grazer.initial / Math.max(1, herd.length), .75, 2.5);
+        if (animal.energy > 49 && animal.age > 16 && herd.length < defs.grazer.max && chance(dt * .052 * grazerRecovery)) {
+          animal.energy -= 20;
+          herd.push(createAnimal("grazer", animal.x + rand(-10, 10), animal.y + rand(-10, 10), 46));
         }
         if (animal.energy <= 0 || animal.age > animal.maxAge) animal.alive = false;
       }
@@ -718,9 +720,11 @@
           wander(animal, .035);
         }
         moveAnimal(animal, dt, 2.65);
-        if (animal.energy > 65 && animal.age > 29 && pack.length < defs.meso.max && chance(dt * .018)) {
-          animal.energy -= 30;
-          pack.push(createAnimal("meso", animal.x + rand(-10, 10), animal.y + rand(-10, 10), 37));
+        // Density-responsive reproduction helps the middle predators recover.
+        var mesoRecovery = clamp(defs.meso.initial / Math.max(1, pack.length), .75, 2.5);
+        if (animal.energy > 55 && animal.age > 22 && pack.length < defs.meso.max && chance(dt * .042 * mesoRecovery)) {
+          animal.energy -= 23;
+          pack.push(createAnimal("meso", animal.x + rand(-10, 10), animal.y + rand(-10, 10), 45));
         }
         if (animal.energy <= 0 || animal.age > animal.maxAge) animal.alive = false;
       }
