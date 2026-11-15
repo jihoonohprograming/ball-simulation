@@ -274,6 +274,13 @@
         </section>
 
         <section class="control-block">
+          <h2 class="section-title">식물 재생</h2>
+          <div class="metric-line"><span>풀 성장 속도</span><output id="growthOutput">1.5×</output></div>
+          <input id="plantGrowth" type="range" min="0.5" max="4" value="1.5" step="0.25" aria-label="풀 성장 속도">
+          <p class="event-copy">초식동물이 먹은 자리에도 풀이 빠르게 다시 자랍니다. 재난으로 일조량이 감소하면 성장도 느려집니다.</p>
+        </section>
+
+        <section class="control-block">
           <h2 class="section-title">운석 충돌</h2>
           <div class="metric-line"><span>운석 지름</span><output id="meteorOutput">120 m</output></div>
           <input id="meteorSize" type="range" min="10" max="1200" value="120" step="10" aria-label="운석 지름">
@@ -392,6 +399,7 @@
     var logs = [];
     var running = true;
     var speed = 1;
+    var plantGrowth = 1.5;
     var simDay = 0;
     var lastFrame = performance.now();
     var lastUi = 0;
@@ -424,12 +432,39 @@
     function createPlant(x, y) {
       return { x: x == null ? rand(15, W - 15) : x, y: y == null ? rand(30, H - 18) : y, age: rand(0, 65), maxAge: rand(115, 195), seed: Math.random() * 10, alive: true };
     }
+    function chooseAnimalSpawn(type, desiredX, desiredY) {
+      var herd = animals[type];
+      var distance = defs[type].size * 2 + 3;
+      var minimumSq = distance * distance;
+      for (var attempt = 0; attempt < 24; attempt++) {
+        var x, y;
+        if (desiredX != null && desiredY != null && attempt < 16) {
+          var angle = rand(0, Math.PI * 2);
+          var offset = distance + rand(2, 14);
+          x = clamp(desiredX + Math.cos(angle) * offset, 15, W - 15);
+          y = clamp(desiredY + Math.sin(angle) * offset, 20, H - 20);
+        } else {
+          x = rand(20, W - 20);
+          y = rand(25, H - 25);
+        }
+        var clear = true;
+        for (var i = 0; i < herd.length; i++) {
+          if (herd[i].alive && (herd[i].x - x) ** 2 + (herd[i].y - y) ** 2 < minimumSq) {
+            clear = false;
+            break;
+          }
+        }
+        if (clear) return { x: x, y: y };
+      }
+      return { x: rand(20, W - 20), y: rand(25, H - 25) };
+    }
+
     function createAnimal(type, x, y, inheritedEnergy) {
-      var d = defs[type];
+      var spawn = chooseAnimalSpawn(type, x, y);
       return {
         type: type,
-        x: x == null ? rand(20, W - 20) : x,
-        y: y == null ? rand(25, H - 25) : y,
+        x: spawn.x,
+        y: spawn.y,
         vx: rand(-1, 1),
         vy: rand(-1, 1),
         energy: inheritedEnergy == null ? rand(55, 76) : inheritedEnergy,
@@ -448,6 +483,9 @@
         for (var i = 0; i < defs[type].initial; i++) {
           animals[type].push(type === "plant" ? createPlant() : createAnimal(type));
         }
+      });
+      ["grazer", "meso", "apex"].forEach(function (type) {
+        separateSpecies(type, 3);
       });
       initialCounts = countAll();
       survivalBaseline = Object.assign({}, initialCounts);
@@ -551,6 +589,55 @@
       animals[type] = animals[type].filter(function (item) { return item.alive; });
     }
 
+    // Prevent animals of the same species from occupying the same spot.
+    // The cell grid keeps the calculation near-linear even with large herds.
+    function separateSpecies(type, passes) {
+      var herd = animals[type];
+      var minDist = defs[type].size * 2 + 3;
+      var minSq = minDist * minDist;
+      for (var pass = 0; pass < passes; pass++) {
+        for (var i = 0; i < herd.length; i++) herd[i]._separationIndex = i;
+        var grid = buildSpatialGrid(herd, minDist);
+        for (var i = 0; i < herd.length; i++) {
+          var a = herd[i];
+          var gx = Math.floor(a.x * grid.inverse);
+          var gy = Math.floor(a.y * grid.inverse);
+          for (var dxCell = -1; dxCell <= 1; dxCell++) {
+            for (var dyCell = -1; dyCell <= 1; dyCell++) {
+              var neighbors = grid.cells[(gx + dxCell) + ":" + (gy + dyCell)];
+              if (!neighbors) continue;
+              for (var j = 0; j < neighbors.length; j++) {
+                var b = neighbors[j];
+                if (!b.alive || b._separationIndex <= i) continue;
+                var dx = b.x - a.x;
+                var dy = b.y - a.y;
+                var dSq = dx * dx + dy * dy;
+                if (dSq >= minSq) continue;
+                if (dSq < .0001) {
+                  var direction = rand(0, Math.PI * 2);
+                  dx = Math.cos(direction);
+                  dy = Math.sin(direction);
+                  dSq = 1;
+                }
+                var d = Math.sqrt(dSq);
+                var push = (minDist - d) * .52;
+                var nx = dx / d;
+                var ny = dy / d;
+                a.x = clamp(a.x - nx * push, 10, W - 10);
+                a.y = clamp(a.y - ny * push, 15, H - 14);
+                b.x = clamp(b.x + nx * push, 10, W - 10);
+                b.y = clamp(b.y + ny * push, 15, H - 14);
+                a.vx -= nx * .06;
+                a.vy -= ny * .06;
+                b.vx += nx * .06;
+                b.vy += ny * .06;
+              }
+            }
+          }
+        }
+      }
+    }
+
     function spawnPlantBurst(x, y, amount) {
       for (var i = 0; i < amount && animals.plant.length < defs.plant.max; i++) {
         animals.plant.push(createPlant(clamp(x + rand(-45, 45), 10, W - 10), clamp(y + rand(-35, 35), 12, H - 12)));
@@ -561,7 +648,12 @@
       var light = getLight();
       var fertility = light * (1 - conditions.drought * .65);
       if (animals.plant.length > 0) {
-        plantSpawnDebt += dt * (24 + animals.plant.length * .018) * fertility;
+        // Strong regrowth offsets the much larger grazer population.
+        // Growth accelerates when bare ground opens up after grazing.
+        var coverage = animals.plant.length / defs.plant.max;
+        var openSpace = Math.max(0, 1 - coverage);
+        var naturalGrowth = (80 + animals.plant.length * .12) * (.5 + openSpace * 1.5);
+        plantSpawnDebt += dt * naturalGrowth * plantGrowth * fertility;
         while (plantSpawnDebt >= 1 && animals.plant.length < defs.plant.max) {
           animals.plant.push(createPlant());
           plantSpawnDebt -= 1;
@@ -689,6 +781,10 @@
       updateGrazers(dt);
       updateMesos(dt);
       updateApex(dt);
+      // Separate members of each food-chain level after movement and births.
+      separateSpecies("grazer", 2);
+      separateSpecies("meso", 2);
+      separateSpecies("apex", 2);
       updateEffects(dt);
       simDay += dt;
       if (simDay - lastHistoryDay >= 1) recordHistory();
@@ -1056,6 +1152,10 @@
     });
     document.querySelectorAll("[data-speed]").forEach(function (button) {
       button.addEventListener("click", function () { setSpeed(this.dataset.speed); });
+    });
+    document.getElementById("plantGrowth").addEventListener("input", function (event) {
+      plantGrowth = Number(event.target.value);
+      document.getElementById("growthOutput").textContent = plantGrowth.toFixed(2).replace(/0+$/, "").replace(/\.$/, "") + "×";
     });
     document.getElementById("meteorSize").addEventListener("input", function (event) {
       document.getElementById("meteorOutput").textContent = Number(event.target.value).toLocaleString("ko-KR") + " m";
