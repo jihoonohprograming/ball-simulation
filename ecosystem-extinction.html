@@ -506,7 +506,9 @@
     function disasterFactor(type) { return 1 / (1 + .015 * Math.max(0, levelOf(type))); }
     function survivesAttack(prey) {
       var level = levelOf(prey.type);
-      return level > 0 && chance(Math.min(.65, Math.max(0, level - 1) * .006));
+      // Survival rises quickly with stage, then approaches an 85% escape
+      // chance; high-stage prey remain catchable but are harder to eliminate.
+      return level > 0 && chance(.85 * (1 - Math.exp(-(level - 1) / 25)));
     }
     // Eating higher-level prey grants a stronger temporary reproduction boost.
     // This bonus also affects the statistically simulated population.
