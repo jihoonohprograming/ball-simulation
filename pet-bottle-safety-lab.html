@@ -3,20 +3,20 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#081c24" />
-  <title>페트병 추진 연구실 · 안전 가상 실험</title>
+  <meta name="theme-color" content="#050b16" />
+  <title>페트병 추진 연구실 · 3D 안전 가상 실험</title>
   <style>
     :root {
-      --ink: #eef8fb;
-      --muted: #a7c0c8;
-      --surface: rgba(15, 47, 59, .78);
-      --surface-strong: #113844;
-      --line: rgba(196, 235, 241, .16);
-      --aqua: #63e6d4;
-      --sky: #7fc8ff;
-      --yellow: #ffd272;
+      --ink: #f0f7ff;
+      --muted: #9baebe;
+      --surface: rgba(15, 30, 52, .84);
+      --surface-strong: #10243c;
+      --line: rgba(179, 211, 241, .15);
+      --aqua: #b8ff5e;
+      --sky: #67c7ff;
+      --yellow: #ffd176;
       --danger: #ff8c86;
-      --shadow: 0 18px 45px rgba(0, 9, 13, .26);
+      --shadow: 0 22px 56px rgba(0, 0, 0, .36);
     }
 
     * { box-sizing: border-box; }
@@ -25,9 +25,9 @@
       min-width: 320px;
       color: var(--ink);
       background:
-        radial-gradient(circle at 10% -10%, rgba(70, 224, 211, .20), transparent 32rem),
-        radial-gradient(circle at 92% 2%, rgba(65, 138, 196, .23), transparent 27rem),
-        #07161d;
+        radial-gradient(circle at 8% -14%, rgba(90, 170, 255, .16), transparent 32rem),
+        radial-gradient(circle at 92% 2%, rgba(104, 255, 127, .09), transparent 28rem),
+        linear-gradient(160deg, #050b16, #071222 58%, #04101a);
       font-family: Pretendard, "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       line-height: 1.48;
     }
@@ -40,8 +40,8 @@
     .eyebrow { margin: 0 0 6px; color: var(--aqua); font-size: .76rem; font-weight: 800; letter-spacing: .12em; }
     h1 { margin: 0; font-size: clamp(1.65rem, 4vw, 2.65rem); line-height: 1.12; letter-spacing: -.055em; }
     .subtitle { margin: 11px 0 0; max-width: 720px; color: var(--muted); font-size: clamp(.93rem, 1.6vw, 1.04rem); }
-    .safety-chip { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 10px 13px; border: 1px solid rgba(99, 230, 212, .32); border-radius: 999px; color: #c8fff8; background: rgba(13, 74, 76, .42); font-size: .82rem; font-weight: 750; }
-    .safety-chip::before { content: "✓"; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; color: #063b3b; background: var(--aqua); font-size: .73rem; }
+    .safety-chip { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 10px 13px; border: 1px solid rgba(184, 255, 94, .32); border-radius: 999px; color: #e1ffc3; background: rgba(62, 93, 30, .25); font-size: .82rem; font-weight: 750; }
+    .safety-chip::before { content: "✓"; display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; color: #193300; background: var(--aqua); font-size: .73rem; }
 
     .notice { display: grid; grid-template-columns: auto 1fr; gap: 13px; align-items: center; margin-bottom: 20px; padding: 15px 17px; border: 1px solid rgba(255, 210, 114, .34); border-radius: 16px; color: #f8e7bd; background: rgba(107, 73, 17, .18); }
     .notice-icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; color: #321e00; background: var(--yellow); font-weight: 950; }
@@ -49,14 +49,14 @@
     .notice p { margin: 0; font-size: .9rem; }
 
     .lab-grid { display: grid; grid-template-columns: minmax(258px, .84fr) minmax(0, 1.9fr) minmax(252px, .8fr); gap: 18px; align-items: start; }
-    .card { border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(145deg, rgba(20, 60, 72, .86), rgba(9, 32, 42, .84)); box-shadow: var(--shadow); }
+    .card { border: 1px solid var(--line); border-radius: 20px; background: linear-gradient(145deg, rgba(16, 32, 54, .9), rgba(6, 17, 33, .92)); box-shadow: var(--shadow); }
     .panel { padding: 20px; }
     .panel h2, .card-title { margin: 0; font-size: 1rem; letter-spacing: -.025em; }
     .panel-intro { margin: 7px 0 19px; color: var(--muted); font-size: .82rem; }
     .form-group { margin-top: 16px; }
     .form-label { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; color: #dff0f4; font-size: .84rem; font-weight: 700; }
-    .value-pill { min-width: 46px; padding: 2px 8px; border-radius: 999px; color: #a8fff4; background: rgba(84, 216, 203, .13); text-align: center; font-size: .73rem; font-variant-numeric: tabular-nums; }
-    select, .field-input { width: 100%; border: 1px solid rgba(210, 240, 245, .17); border-radius: 11px; outline: none; color: var(--ink); background: rgba(3, 21, 28, .56); padding: 10px 11px; transition: border-color .16s ease, box-shadow .16s ease; }
+    .value-pill { min-width: 46px; padding: 2px 8px; border-radius: 999px; color: #d9ffaf; background: rgba(184, 255, 94, .10); text-align: center; font-size: .73rem; font-variant-numeric: tabular-nums; }
+    select, .field-input { width: 100%; border: 1px solid rgba(180, 212, 246, .17); border-radius: 11px; outline: none; color: var(--ink); background: rgba(3, 12, 25, .67); padding: 10px 11px; transition: border-color .16s ease, box-shadow .16s ease; }
     select:focus, .field-input:focus { border-color: var(--aqua); box-shadow: 0 0 0 3px rgba(99, 230, 212, .13); }
     input[type="range"] { width: 100%; height: 6px; margin: 6px 0 0; appearance: none; border-radius: 999px; background: linear-gradient(90deg, var(--aqua) var(--fill, 50%), rgba(216, 245, 249, .15) var(--fill, 50%)); }
     input[type="range"]::-webkit-slider-thumb { width: 17px; height: 17px; appearance: none; border: 3px solid #eaffff; border-radius: 50%; background: var(--sky); box-shadow: 0 2px 7px rgba(0,0,0,.35); }
@@ -66,18 +66,30 @@
     .button { border: 0; border-radius: 12px; padding: 12px 14px; font-weight: 850; transition: transform .15s ease, filter .15s ease, background .15s ease; }
     .button:hover { transform: translateY(-1px); filter: brightness(1.07); }
     .button:active { transform: translateY(0); }
-    .primary { color: #04211f; background: linear-gradient(115deg, var(--aqua), #78d9ff); }
-    .secondary { color: #ccf3f2; border: 1px solid rgba(159, 237, 232, .27); background: rgba(42, 124, 125, .19); }
-    .small-button { padding: 8px 10px; border: 1px solid rgba(175, 226, 235, .22); border-radius: 9px; color: #d8f5f4; background: rgba(4, 28, 36, .55); font-size: .74rem; font-weight: 750; }
+    .primary { color: #162b00; background: linear-gradient(115deg, var(--aqua), #85ff9a); }
+    .secondary { color: #d9ebff; border: 1px solid rgba(141, 190, 248, .28); background: rgba(26, 57, 91, .34); }
+    .small-button { padding: 8px 10px; border: 1px solid rgba(175, 226, 235, .22); border-radius: 9px; color: #d8f5f4; background: rgba(12, 38, 66, .65); font-size: .74rem; font-weight: 750; }
     .small-button:hover { border-color: var(--aqua); }
 
-    .stage { overflow: hidden; min-height: 660px; position: relative; }
+    .stage { overflow: hidden; min-height: 730px; position: relative; }
     .stage-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 20px 22px 0; }
-    .virtual-label { padding: 5px 9px; border: 1px solid rgba(127, 200, 255, .27); border-radius: 999px; color: #b9e5ff; background: rgba(45, 127, 175, .16); font-size: .69rem; font-weight: 800; letter-spacing: .04em; }
-    .canvas-wrap { position: relative; height: 358px; margin: 15px 16px 0; overflow: hidden; border: 1px solid rgba(190, 233, 239, .12); border-radius: 16px; background: linear-gradient(180deg, #123e50 0%, #1f7184 64%, #205f57 64%, #17463e 100%); }
-    #flightCanvas { display: block; width: 100%; height: 100%; }
-    .canvas-note { position: absolute; top: 12px; left: 14px; max-width: 235px; color: rgba(239, 255, 255, .78); font-size: .72rem; line-height: 1.38; pointer-events: none; }
-    .status-banner { display: flex; align-items: center; gap: 9px; margin: 12px 18px 0; padding: 11px 13px; border: 1px solid rgba(99, 230, 212, .18); border-radius: 12px; color: #cef8f4; background: rgba(10, 55, 64, .6); font-size: .82rem; }
+    .virtual-label { padding: 5px 9px; border: 1px solid rgba(184, 255, 94, .36); border-radius: 999px; color: #d8ffad; background: rgba(82, 115, 35, .16); font-size: .69rem; font-weight: 800; letter-spacing: .06em; }
+    .canvas-wrap { position: relative; height: 428px; margin: 15px 16px 0; overflow: hidden; border: 1px solid rgba(167, 207, 255, .20); border-radius: 16px; background: radial-gradient(circle at 60% 25%, #10284b 0%, #050b17 55%, #02060e 100%); box-shadow: inset 0 0 70px rgba(0, 0, 0, .72), 0 18px 34px rgba(0, 0, 0, .32); }
+    .canvas-wrap::before { content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none; background: linear-gradient(180deg, rgba(140, 193, 255, .05), transparent 22%, transparent 75%, rgba(0, 0, 0, .38)); }
+    #flightCanvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+    #flightCanvas:active { cursor: grabbing; }
+    .canvas-note { position: absolute; z-index: 2; bottom: 12px; left: 14px; max-width: 245px; color: rgba(205, 230, 255, .79); font-size: .70rem; line-height: 1.42; pointer-events: none; }
+    .scene-hud { position: absolute; z-index: 2; top: 14px; left: 15px; max-width: 265px; color: #e5f6ff; pointer-events: none; }
+    .scene-kicker { margin-bottom: 4px; color: var(--aqua); font-size: .67rem; font-weight: 900; letter-spacing: .15em; }
+    .scene-hud strong { display: block; font-size: .92rem; letter-spacing: -.025em; }
+    .scene-hud span { display: block; margin-top: 3px; color: #a9c3d9; font-size: .70rem; }
+    .scene-chip-row { position: absolute; z-index: 2; top: 78px; left: 15px; display: flex; flex-wrap: wrap; gap: 6px; pointer-events: none; }
+    .scene-chip { padding: 5px 8px; border: 1px solid rgba(164, 213, 255, .17); border-radius: 999px; color: #b7d5ec; background: rgba(4, 14, 29, .62); font-size: .65rem; }
+    .scene-tools { position: absolute; z-index: 3; right: 13px; top: 13px; display: flex; gap: 6px; }
+    .scene-tool { min-width: 29px; border: 1px solid rgba(165, 211, 255, .24); border-radius: 8px; padding: 7px 8px; color: #d9ecff; background: rgba(9, 25, 45, .78); font-size: .68rem; font-weight: 800; }
+    .scene-tool.active, .scene-tool:hover { border-color: rgba(184, 255, 94, .65); color: #dffffa; background: rgba(85, 122, 32, .28); }
+    .scene-help { position: absolute; z-index: 2; right: 14px; bottom: 12px; color: rgba(196, 222, 248, .74); font-size: .67rem; pointer-events: none; }
+    .status-banner { display: flex; align-items: center; gap: 9px; margin: 12px 18px 0; padding: 11px 13px; border: 1px solid rgba(139, 192, 255, .19); border-radius: 12px; color: #d9eaff; background: rgba(8, 26, 49, .72); font-size: .82rem; }
     .status-dot { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; background: var(--aqua); box-shadow: 0 0 12px var(--aqua); }
     .results { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; padding: 16px 18px 0; }
     .metric { padding: 13px 12px; border: 1px solid rgba(197, 235, 241, .12); border-radius: 14px; background: rgba(5, 30, 38, .52); }
@@ -131,7 +143,9 @@
       .lab-grid, .research { grid-template-columns: 1fr; }
       .log-panel { grid-column: auto; }
       .log-panel .method-list { grid-template-columns: 1fr 1fr; }
-      .canvas-wrap { height: 310px; }
+      .canvas-wrap { height: 365px; }
+      .scene-hud { max-width: 205px; }
+      .scene-help { display: none; }
       .results { grid-template-columns: repeat(2, minmax(0, 1fr)); }
       .stage { min-height: unset; }
       .notice { align-items: start; }
@@ -201,12 +215,29 @@
 
       <section class="card stage" aria-labelledby="flight-title">
         <div class="stage-header">
-          <h2 class="card-title" id="flight-title">가상 시험장</h2>
-          <span class="virtual-label">SIMULATION ONLY</span>
+          <h2 class="card-title" id="flight-title">3D 가상 시험장</h2>
+          <span class="virtual-label">3D · INTERACTIVE</span>
         </div>
         <div class="canvas-wrap">
-          <canvas id="flightCanvas" aria-label="가상 페트병 비행 궤적"></canvas>
+          <canvas id="flightCanvas" aria-label="드래그로 회전할 수 있는 3D 페트병 가상 시험장"></canvas>
+          <div class="scene-hud">
+            <div class="scene-kicker">VIRTUAL TEST RANGE / 3D</div>
+            <strong>페트병 가상 비행 장면</strong>
+            <span>시점을 바꾸며 궤적을 관찰해 보세요.</span>
+          </div>
+          <div class="scene-chip-row" aria-hidden="true">
+            <span class="scene-chip">상대 지표</span>
+            <span class="scene-chip">안전 검토</span>
+            <span class="scene-chip">가상 전용</span>
+          </div>
+          <div class="scene-tools" role="group" aria-label="3D 장면 조작">
+            <button class="scene-tool active" id="orbitToggle" type="button">자동 회전</button>
+            <button class="scene-tool" id="sceneReset" type="button">시점</button>
+            <button class="scene-tool" id="zoomOut" type="button" aria-label="축소">−</button>
+            <button class="scene-tool" id="zoomIn" type="button" aria-label="확대">+</button>
+          </div>
           <div class="canvas-note">상대 지표를 시각화한 궤적입니다.<br>실제 거리·속도·안전 기준으로 사용하지 마세요.</div>
+          <div class="scene-help">드래그 · 카메라 회전　휠 · 확대/축소</div>
         </div>
         <div class="status-banner" id="statusText" role="status"><span class="status-dot"></span><span>조건을 정한 뒤 가상 비행을 실행해 보세요.</span></div>
         <div class="results" aria-label="가상 결과">
@@ -308,10 +339,28 @@
       const logList = document.querySelector("#logList");
       const logCount = document.querySelector("#logCount");
       const experimentName = document.querySelector("#experimentName");
+      const orbitToggle = document.querySelector("#orbitToggle");
+      const sceneReset = document.querySelector("#sceneReset");
+      const zoomOut = document.querySelector("#zoomOut");
+      const zoomIn = document.querySelector("#zoomIn");
       const storageKey = "petBottleSafetyLabRecordsV1";
       let currentResult = null;
       let flightAnimation = null;
       let lastFlight = { progress: 0, result: null };
+      const scene = {
+        yaw: -.64,
+        pitch: .32,
+        zoom: 1,
+        autoOrbit: true,
+        dragging: false,
+        pointer: null,
+        time: 0,
+        frame: null,
+        stars: Array.from({ length: 144 }, (_, index) => {
+          const random = offset => (Math.sin((index + 1) * 95.987 + offset) + 1) / 2;
+          return { x: random(1.3), y: random(3.9) * .86, size: .55 + random(8.1) * 1.35, phase: random(12.4) * Math.PI * 2 };
+        })
+      };
 
       const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
       const round = value => Math.round(value);
@@ -398,23 +447,212 @@
         drawScene(lastFlight.progress, lastFlight.result);
       }
 
-      function drawBottle(x, y, rotation, color) {
+      const add = (a, b) => ({ x: a.x + b.x, y: a.y + b.y, z: a.z + b.z });
+      const subtract = (a, b) => ({ x: a.x - b.x, y: a.y - b.y, z: a.z - b.z });
+      const multiply = (vector, amount) => ({ x: vector.x * amount, y: vector.y * amount, z: vector.z * amount });
+      const dot = (a, b) => a.x * b.x + a.y * b.y + a.z * b.z;
+      const cross = (a, b) => ({ x: a.y * b.z - a.z * b.y, y: a.z * b.x - a.x * b.z, z: a.x * b.y - a.y * b.x });
+      const normalize = vector => {
+        const length = Math.hypot(vector.x, vector.y, vector.z) || 1;
+        return { x: vector.x / length, y: vector.y / length, z: vector.z / length };
+      };
+
+      function rgbaFromHex(hex, intensity = 1, alpha = 1) {
+        const value = parseInt(hex.replace("#", ""), 16);
+        const red = (value >> 16) & 255;
+        const green = (value >> 8) & 255;
+        const blue = value & 255;
+        const light = channel => Math.round(clamp(channel * intensity + 13, 0, 255));
+        return `rgba(${light(red)}, ${light(green)}, ${light(blue)}, ${alpha})`;
+      }
+
+      function project3D(point, width, height) {
+        const yawCos = Math.cos(scene.yaw);
+        const yawSin = Math.sin(scene.yaw);
+        const pitchCos = Math.cos(scene.pitch);
+        const pitchSin = Math.sin(scene.pitch);
+        const x1 = point.x * yawCos - point.z * yawSin;
+        const z1 = point.x * yawSin + point.z * yawCos;
+        const y1 = point.y * pitchCos - z1 * pitchSin;
+        const z2 = point.y * pitchSin + z1 * pitchCos;
+        const depth = z2 + 820;
+        const scale = (700 / Math.max(160, depth)) * scene.zoom;
+        return { x: width * .51 + x1 * scale, y: height * .67 - y1 * scale, depth, scale, visible: depth > 40 };
+      }
+
+      function drawWorldLine(start, end, width, height, color, lineWidth = 1, dash = []) {
+        const a = project3D(start, width, height);
+        const b = project3D(end, width, height);
+        if (!a.visible || !b.visible) return;
         ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(rotation);
-        ctx.shadowColor = "rgba(0, 0, 0, .32)";
-        ctx.shadowBlur = 8;
-        ctx.fillStyle = "rgba(229, 255, 252, .86)";
+        ctx.strokeStyle = color;
+        ctx.lineWidth = lineWidth;
+        ctx.setLineDash(dash);
         ctx.beginPath();
-        ctx.roundRect(-18, -8, 28, 16, 5);
-        ctx.fill();
-        ctx.fillStyle = color;
-        ctx.fillRect(-11, -7, 12, 14);
-        ctx.fillStyle = "#0b2a33";
-        ctx.fillRect(10, -4, 6, 8);
-        ctx.fillStyle = "rgba(255,255,255,.72)";
-        ctx.fillRect(-15, -5, 3, 10);
+        ctx.moveTo(a.x, a.y);
+        ctx.lineTo(b.x, b.y);
+        ctx.stroke();
         ctx.restore();
+      }
+
+      function drawWorldPolygon(points, width, height, fill, stroke = null, lineWidth = 1) {
+        const projected = points.map(point => project3D(point, width, height));
+        if (projected.some(point => !point.visible)) return;
+        ctx.beginPath();
+        ctx.moveTo(projected[0].x, projected[0].y);
+        projected.slice(1).forEach(point => ctx.lineTo(point.x, point.y));
+        ctx.closePath();
+        if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+        if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = lineWidth; ctx.stroke(); }
+      }
+
+      function drawPlanet(width, height) {
+        const radius = Math.min(width, height) * .45;
+        const cx = width * .82;
+        const cy = height * .42;
+        const glow = ctx.createRadialGradient(cx - radius * .28, cy - radius * .3, radius * .08, cx, cy, radius * 1.23);
+        glow.addColorStop(0, "rgba(110, 187, 255, .36)");
+        glow.addColorStop(.5, "rgba(34, 95, 185, .18)");
+        glow.addColorStop(1, "rgba(12, 39, 93, 0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath(); ctx.arc(cx, cy, radius * 1.23, 0, Math.PI * 2); ctx.fill();
+        const sphere = ctx.createRadialGradient(cx - radius * .27, cy - radius * .34, radius * .04, cx, cy, radius);
+        sphere.addColorStop(0, "#4eaa90");
+        sphere.addColorStop(.35, "#1f6d83");
+        sphere.addColorStop(.73, "#0f345f");
+        sphere.addColorStop(1, "#031126");
+        ctx.save();
+        ctx.shadowColor = "rgba(77, 164, 255, .7)";
+        ctx.shadowBlur = 22;
+        ctx.fillStyle = sphere;
+        ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+        ctx.save();
+        ctx.beginPath(); ctx.arc(cx, cy, radius, 0, Math.PI * 2); ctx.clip();
+        ctx.strokeStyle = "rgba(165, 236, 255, .17)";
+        ctx.lineWidth = 1;
+        for (let band = -3; band <= 3; band++) {
+          const y = cy + band * radius * .2;
+          ctx.beginPath(); ctx.ellipse(cx, y, radius * .96, Math.max(5, radius * (.105 + Math.abs(band) * .008)), 0, 0, Math.PI * 2); ctx.stroke();
+        }
+        for (let meridian = -4; meridian <= 4; meridian++) {
+          ctx.beginPath(); ctx.ellipse(cx + meridian * radius * .06, cy, Math.max(7, radius * (.94 - Math.abs(meridian) * .115)), radius * .98, 0, 0, Math.PI * 2); ctx.stroke();
+        }
+        ctx.fillStyle = "rgba(151, 225, 121, .18)";
+        for (let island = 0; island < 14; island++) {
+          const x = cx - radius * .45 + ((island * 83) % 100) / 100 * radius * .95;
+          const y = cy - radius * .45 + ((island * 47) % 100) / 100 * radius * .8;
+          ctx.fillRect(x, y, 16 + (island % 4) * 8, 9 + (island % 3) * 7);
+        }
+        ctx.restore();
+      }
+
+      function drawStars(width, height) {
+        scene.stars.forEach(star => {
+          const flicker = .35 + .52 * ((Math.sin(scene.time * .0012 + star.phase) + 1) / 2);
+          ctx.fillStyle = `rgba(201, 227, 255, ${flicker})`;
+          ctx.beginPath(); ctx.arc(star.x * width, star.y * height, star.size, 0, Math.PI * 2); ctx.fill();
+        });
+      }
+
+      function drawGrid(width, height) {
+        const ground = -112;
+        for (let i = -520; i <= 520; i += 80) {
+          drawWorldLine({ x: i, y: ground, z: -520 }, { x: i, y: ground, z: 520 }, width, height, "rgba(96, 173, 255, .18)");
+          drawWorldLine({ x: -520, y: ground, z: i }, { x: 520, y: ground, z: i }, width, height, "rgba(96, 173, 255, .15)");
+        }
+        const outer = [];
+        for (let step = 0; step < 28; step++) {
+          const angle = step / 28 * Math.PI * 2;
+          outer.push({ x: -235 + Math.cos(angle) * 78, y: ground + 1, z: Math.sin(angle) * 78 });
+        }
+        drawWorldPolygon(outer, width, height, "rgba(111, 201, 255, .10)", "rgba(184, 255, 94, .58)", 1.5);
+        for (let ring = 1; ring <= 3; ring++) {
+          const circle = [];
+          for (let step = 0; step < 24; step++) {
+            const angle = step / 24 * Math.PI * 2;
+            circle.push({ x: -235 + Math.cos(angle) * (ring * 19), y: ground + 2, z: Math.sin(angle) * (ring * 19) });
+          }
+          drawWorldPolygon(circle, width, height, null, "rgba(176, 241, 255, .28)", 1);
+        }
+        const label = project3D({ x: -235, y: ground + 8, z: -80 }, width, height);
+        if (label.visible) {
+          ctx.fillStyle = "rgba(211, 239, 255, .8)";
+          ctx.font = "700 10px system-ui, sans-serif";
+          ctx.fillText("VIRTUAL LAUNCH PAD", label.x - 44, label.y);
+        }
+      }
+
+      function flightPoint(result, t) {
+        const distance = 275 + result.range * 4.4;
+        const arc = 4 * t * (1 - t);
+        return {
+          x: -235 + distance * t,
+          y: result.method === "ramp" ? -101 + t * 8 : -92 + arc * (145 + result.height * 2.1),
+          z: Math.sin(t * Math.PI) * (result.wind - 2) * 36 + (result.method === "ramp" ? 46 : 0)
+        };
+      }
+
+      function drawTrajectory(result, width, height) {
+        ctx.save();
+        ctx.setLineDash([5, 7]);
+        ctx.strokeStyle = rgbaFromHex(result.methodInfo.color, 1.15, .82);
+        ctx.lineWidth = 1.75;
+        ctx.beginPath();
+        let isFirst = true;
+        for (let t = 0; t <= 1.001; t += .022) {
+          const point = project3D(flightPoint(result, Math.min(1, t)), width, height);
+          if (!point.visible) continue;
+          if (isFirst) { ctx.moveTo(point.x, point.y); isFirst = false; } else ctx.lineTo(point.x, point.y);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      function drawBottle3D(origin, forward, color, width, height) {
+        const worldUp = Math.abs(forward.y) > .88 ? { x: 0, y: 0, z: 1 } : { x: 0, y: 1, z: 0 };
+        const right = normalize(cross(forward, worldUp));
+        const up = normalize(cross(right, forward));
+        const rings = [[-33, 4], [-25, 7], [-8, 15], [16, 15], [29, 9], [35, 5]];
+        const sections = 9;
+        const vertices = rings.map(([distance, radius]) => Array.from({ length: sections }, (_, index) => {
+          const angle = index / sections * Math.PI * 2;
+          return add(add(origin, multiply(forward, distance)), add(multiply(right, Math.cos(angle) * radius), multiply(up, Math.sin(angle) * radius)));
+        }));
+        const light = normalize({ x: -.42, y: .74, z: -.56 });
+        const faces = [];
+        for (let ring = 0; ring < vertices.length - 1; ring++) {
+          for (let section = 0; section < sections; section++) {
+            const next = (section + 1) % sections;
+            const points = [vertices[ring][section], vertices[ring][next], vertices[ring + 1][next], vertices[ring + 1][section]];
+            const normal = normalize(cross(subtract(points[1], points[0]), subtract(points[3], points[0])));
+            faces.push({ points, depth: points.reduce((sum, point) => sum + project3D(point, width, height).depth, 0) / 4, light: dot(normal, light) });
+          }
+        }
+        faces.sort((a, b) => b.depth - a.depth).forEach(face => {
+          const intensity = clamp(.4 + face.light * .54, .12, 1.15);
+          drawWorldPolygon(face.points, width, height, rgbaFromHex(color, intensity, .97), "rgba(224, 248, 255, .25)", .55);
+        });
+        const capCenter = add(origin, multiply(forward, 39));
+        const cap = [];
+        for (let index = 0; index < sections; index++) {
+          const angle = index / sections * Math.PI * 2;
+          cap.push(add(capCenter, add(multiply(right, Math.cos(angle) * 4.8), multiply(up, Math.sin(angle) * 4.8))));
+        }
+        drawWorldPolygon(cap, width, height, "rgba(223, 245, 255, .95)", "rgba(10, 27, 56, .8)", .8);
+      }
+
+      function drawFlightParticles(result, progress, width, height) {
+        const amount = Math.min(13, Math.floor(progress * 19));
+        for (let index = 1; index <= amount; index++) {
+          const t = clamp(progress - index * .022, 0, 1);
+          const position = flightPoint(result, t);
+          position.y -= index * .7;
+          const point = project3D(position, width, height);
+          if (!point.visible) continue;
+          ctx.fillStyle = rgbaFromHex(result.methodInfo.color, 1.2, Math.max(.08, .5 - index * .028));
+          ctx.beginPath(); ctx.arc(point.x, point.y, Math.max(1, point.scale * (6 - index * .28)), 0, Math.PI * 2); ctx.fill();
+        }
       }
 
       function drawScene(progress = 0, result = null) {
@@ -423,74 +661,88 @@
         const height = rect.height;
         if (!width || !height) return;
         ctx.clearRect(0, 0, width, height);
+        ctx.fillStyle = "#030914";
+        ctx.fillRect(0, 0, width, height);
+        drawStars(width, height);
+        drawPlanet(width, height);
+        drawGrid(width, height);
 
-        const ground = height * .72;
-        const gridColor = "rgba(223, 252, 255, .12)";
-        ctx.strokeStyle = gridColor;
-        ctx.lineWidth = 1;
-        for (let x = 24; x < width; x += 42) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, ground); ctx.stroke(); }
-        for (let y = 22; y < ground; y += 36) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke(); }
-        ctx.fillStyle = "rgba(255,255,255,.18)";
-        ctx.beginPath();
-        ctx.arc(width * .86, 43, 19, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = "rgba(222, 255, 238, .35)";
-        ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.moveTo(0, ground); ctx.lineTo(width, ground); ctx.stroke();
-
-        const startX = Math.max(60, width * .12);
-        ctx.fillStyle = "#0a2d32";
-        ctx.fillRect(startX - 18, ground - 9, 54, 9);
-        ctx.fillStyle = "#1d6b69";
-        ctx.fillRect(startX - 9, ground - 25, 22, 16);
-        ctx.fillStyle = "rgba(225, 255, 249, .7)";
-        ctx.font = "11px system-ui, sans-serif";
-        ctx.fillText("가상 시작선", startX - 17, ground + 21);
-
-        if (!result) {
-          drawBottle(startX + 8, ground - 38, -.22, "#63e6d4");
-          return;
+        let bottlePosition = { x: -235, y: -77, z: 0 };
+        let bottleDirection = normalize({ x: .9, y: .23, z: 0 });
+        let bottleColor = "#b8ff5e";
+        if (result) {
+          drawTrajectory(result, width, height);
+          bottlePosition = flightPoint(result, progress);
+          const before = flightPoint(result, clamp(progress - .01, 0, 1));
+          const after = flightPoint(result, clamp(progress + .012, 0, 1));
+          bottleDirection = normalize(subtract(after, before));
+          bottleColor = result.methodInfo.color;
+          if (progress > .01) drawFlightParticles(result, progress, width, height);
         }
-        const rangePx = Math.min(width * .76, 92 + (result.range / 100) * width * .72);
-        const angleRad = (result.angle * Math.PI) / 180;
-        const maxHeight = Math.min(height * .58, 48 + (result.height / 100) * height * .9);
-        const currentX = startX + rangePx * progress;
-        const arc = 4 * progress * (1 - progress);
-        let currentY;
-        if (result.method === "ramp") currentY = ground - 24 + progress * 18;
-        else currentY = ground - 38 - arc * maxHeight;
-        const derivative = result.method === "ramp" ? .14 : -4 * maxHeight * (1 - 2 * progress) / rangePx;
-        const rotation = Math.atan2(derivative * rangePx, 1) + (result.method === "ramp" ? .15 : 0);
+        drawBottle3D(bottlePosition, bottleDirection, bottleColor, width, height);
 
-        ctx.save();
-        ctx.setLineDash([5, 6]);
-        ctx.strokeStyle = `${result.methodInfo.color}88`;
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        for (let t = 0; t <= 1; t += .025) {
-          const px = startX + rangePx * t;
-          const py = result.method === "ramp" ? ground - 24 + t * 18 : ground - 38 - 4 * t * (1 - t) * maxHeight;
-          if (t === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-        }
-        ctx.stroke();
-        ctx.restore();
-
-        if (progress > 0) {
-          const particles = Math.floor(Math.min(9, progress * 14));
-          ctx.fillStyle = `${result.methodInfo.color}99`;
-          for (let i = 0; i < particles; i++) {
-            const p = clamp(progress - (i + 1) * .025, 0, 1);
-            const px = startX + rangePx * p;
-            const py = result.method === "ramp" ? ground - 20 + p * 18 : ground - 38 - 4 * p * (1 - p) * maxHeight;
-            ctx.beginPath(); ctx.arc(px, py, Math.max(1.3, 4 - i * .3), 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = "rgba(199, 224, 255, .72)";
+        ctx.font = "700 10px system-ui, sans-serif";
+        ctx.fillText(`CAMERA  ${scene.autoOrbit ? "AUTO" : "MANUAL"}`, width - 128, height - 22);
+        if (result && progress >= .995) {
+          const end = project3D(flightPoint(result, 1), width, height);
+          if (end.visible) {
+            ctx.fillStyle = "rgba(235, 255, 207, .95)";
+            ctx.font = "800 10px system-ui, sans-serif";
+            ctx.fillText("SIMULATED END", end.x - 38, end.y - 12);
           }
         }
-        drawBottle(currentX, currentY, rotation, result.methodInfo.color);
-        if (progress >= .995) {
-          ctx.fillStyle = "rgba(231, 255, 249, .9)";
-          ctx.font = "700 11px system-ui, sans-serif";
-          ctx.fillText("가상 도착점", Math.min(width - 77, currentX - 29), ground + 21);
-        }
+      }
+
+      function renderScene(now) {
+        scene.time = now;
+        if (scene.autoOrbit && !scene.dragging) scene.yaw += .00045;
+        drawScene(lastFlight.progress, lastFlight.result);
+        scene.frame = requestAnimationFrame(renderScene);
+      }
+
+      function updateSceneControls() {
+        orbitToggle.classList.toggle("active", scene.autoOrbit);
+        orbitToggle.textContent = scene.autoOrbit ? "자동 회전" : "수동 시점";
+      }
+
+      function setupSceneControls() {
+        orbitToggle.addEventListener("click", () => { scene.autoOrbit = !scene.autoOrbit; updateSceneControls(); });
+        sceneReset.addEventListener("click", () => {
+          scene.yaw = -.64;
+          scene.pitch = .32;
+          scene.zoom = 1;
+          scene.autoOrbit = true;
+          updateSceneControls();
+        });
+        zoomOut.addEventListener("click", () => { scene.zoom = clamp(scene.zoom * .82, .63, 1.65); });
+        zoomIn.addEventListener("click", () => { scene.zoom = clamp(scene.zoom * 1.18, .63, 1.65); });
+        canvas.addEventListener("pointerdown", event => {
+          scene.dragging = true;
+          scene.autoOrbit = false;
+          scene.pointer = { x: event.clientX, y: event.clientY };
+          canvas.setPointerCapture(event.pointerId);
+          updateSceneControls();
+        });
+        canvas.addEventListener("pointermove", event => {
+          if (!scene.dragging || !scene.pointer) return;
+          const dx = event.clientX - scene.pointer.x;
+          const dy = event.clientY - scene.pointer.y;
+          scene.yaw += dx * .008;
+          scene.pitch = clamp(scene.pitch + dy * .006, -.48, .78);
+          scene.pointer = { x: event.clientX, y: event.clientY };
+        });
+        const stopDragging = event => {
+          scene.dragging = false;
+          scene.pointer = null;
+          if (event?.pointerId !== undefined && canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
+        };
+        canvas.addEventListener("pointerup", stopDragging);
+        canvas.addEventListener("pointercancel", stopDragging);
+        canvas.addEventListener("wheel", event => {
+          event.preventDefault();
+          scene.zoom = clamp(scene.zoom * (event.deltaY < 0 ? 1.1 : .9), .63, 1.65);
+        }, { passive: false });
       }
 
       function animateFlight(result) {
@@ -502,7 +754,6 @@
           const raw = clamp((now - startTime) / animationDuration, 0, 1);
           const smooth = raw < .5 ? 2 * raw * raw : 1 - Math.pow(-2 * raw + 2, 2) / 2;
           lastFlight = { progress: smooth, result };
-          drawScene(smooth, result);
           if (raw < 1) {
             flightAnimation = requestAnimationFrame(frame);
           } else {
@@ -567,7 +818,11 @@
         statusText.textContent = "연구 기록 CSV를 준비했습니다.";
       }
 
-      Object.values(controls).forEach(control => control.addEventListener("input", () => { syncControls(); currentResult = null; }));
+      Object.values(controls).forEach(control => control.addEventListener("input", () => {
+        syncControls();
+        currentResult = null;
+        lastFlight = { progress: 0, result: null };
+      }));
       document.querySelector("#simulate").addEventListener("click", runSimulation);
       document.querySelector("#saveLog").addEventListener("click", saveCurrentLog);
       document.querySelector("#exportLog").addEventListener("click", exportCsv);
@@ -594,8 +849,14 @@
 
       syncControls();
       renderLog();
-      requestAnimationFrame(resizeCanvas);
+      setupSceneControls();
+      updateSceneControls();
+      requestAnimationFrame(() => {
+        resizeCanvas();
+        scene.frame = requestAnimationFrame(renderScene);
+      });
     })();
   </script>
 </body>
 </html>
+
